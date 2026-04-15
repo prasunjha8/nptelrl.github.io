@@ -1,84 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Week 5 - Reinforcement Learning</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 5 - Reinforcement Learning</title>
 
-    <style>
-        body {
-            margin: 0;
-            padding: 40px;
-            background-color: #000;
-            color: #fff;
-            font-family: "Segoe UI", Arial, sans-serif;
-            line-height: 1.7;
-        }
+<style>
+body {
+    margin: 0;
+    padding: 40px;
+    background-color: #000;
+    color: #fff;
+    font-family: "Segoe UI", Arial, sans-serif;
+    line-height: 1.7;
+}
 
-        h1 {
-            font-size: 36px;
-            border-bottom: 2px solid #fff;
-            padding-bottom: 10px;
-        }
+h1 {
+    font-size: 36px;
+    border-bottom: 2px solid #fff;
+    padding-bottom: 10px;
+}
 
-        h2 {
-            margin-top: 40px;
-            color: #f0f0f0;
-        }
+h2 {
+    margin-top: 40px;
+    border-left: 4px solid #fff;
+    padding-left: 10px;
+}
 
-        h3 {
-            margin-top: 25px;
-            color: #dcdcdc;
-        }
+h3 {
+    margin-top: 25px;
+    color: #ccc;
+}
 
-        p {
-            margin: 10px 0;
-        }
+p {
+    margin: 10px 0;
+}
 
-        code {
-            display: block;
-            background: #111;
-            padding: 12px;
-            margin: 10px 0;
-            border-left: 3px solid #fff;
-            overflow-x: auto;
-        }
+code {
+    display: block;
+    background: #111;
+    padding: 12px;
+    margin: 10px 0;
+    border-left: 3px solid #fff;
+    overflow-x: auto;
+}
 
-        .question {
-            margin-top: 15px;
-            padding: 12px;
-            border-left: 3px solid #fff;
-            background: #111;
-        }
+.section {
+    margin-bottom: 40px;
+}
 
-        ul {
-            margin-left: 20px;
-        }
-    </style>
+.question {
+    margin-top: 15px;
+    padding: 15px;
+    background: #111;
+    border-left: 4px solid #fff;
+}
+
+ul {
+    margin-left: 20px;
+}
+
+</style>
 </head>
 
 <body>
 
-<h1>Reinforcement Learning - Week 5</h1>
+<h1>Reinforcement Learning Examination Notes</h1>
 
 <p>These notes cover core algorithms for finding optimal policies and value functions in MDPs: Value Iteration, Policy Iteration, Asynchronous DP, and Monte Carlo methods.</p>
 
+<div class="section">
 <h2>1. Value Iteration and Contraction Mappings</h2>
 
-<p>Value iteration involves successively updating an estimated value function until it converges to the optimal value function.</p>
+<p>Value iteration involves successively updating an estimated value function v until it converges to the optimal value function v*.</p>
 
-<h3>Bellman Optimality Operator</h3>
+<h3>The Bellman Optimality Operator (L)</h3>
 
 <code>
-(Lv)(s) = max_a [ R(s,a) + γ Σ P(s' | s,a) v(s') ]
+(Lv)(s) = max_{a ∈ A} [ R(s,a) + γ Σ P(s' | s,a) v(s') ]
 </code>
 
-<p>The space of value functions forms a Banach space under the max norm.</p>
+<p>The space of all bounded value functions forms a complete Banach space under the max norm.</p>
 
 <ul>
-    <li>Operator L is a contraction with factor γ &lt; 1</li>
-    <li>It has a unique fixed point v*</li>
-    <li>It is non-linear due to max operator</li>
+<li>L is a contraction mapping with factor γ &lt; 1</li>
+<li>L has a unique fixed point v*</li>
+<li>L is non-linear due to the max operation</li>
 </ul>
 
 <h3>Mathematical Bounds</h3>
@@ -87,13 +94,25 @@
 <code>|Lv(s) - Lu(s)| ≤ γ ||v - u||</code>
 
 <div class="question">
-    <strong>Practice Question:</strong><br>
-    Correct options: (b), (c), (d)
+<strong>Practice Question (Assignment 5, Q9)</strong><br>
+Q: Given that L is a contraction in Banach space, which of the following is true?<br>
+(a) A contraction mapping does not have a unique fixed point.<br>
+(b) A contraction mapping may be non-linear.<br>
+(c) ||Lv - Lu|| ≤ γ ||v - u||<br>
+(d) ∀ s, |Lv(s) - Lu(s)| ≤ γ ||v - u||<br><br>
+
+Solution: (b), (c), (d)
 </div>
 
 <div class="question">
-    <strong>Practice Question:</strong><br>
-    Correct option: (a)
+<strong>Practice Question (Assignment 5, Q10)</strong><br>
+Q: Which of the following are true?<br>
+(a) The Bellman optimality equation defines a contraction in Banach space.<br>
+(b) The Bellman optimality equation can be rewritten as a linear transformation.<br>
+(c) Final values from stopping condition are optimal.<br>
+(d) Final greedy policy is optimal.<br><br>
+
+Solution: (a)
 </div>
 
 <h3>Stopping Criteria</h3>
@@ -102,89 +121,103 @@
 
 <p>Guarantees:</p>
 <ul>
-    <li>|| v(n+1) - v* || ≤ ε/2</li>
-    <li>|| v^π - v* || ≤ ε</li>
+<li>|| v(n+1) - v* || ≤ ε/2</li>
+<li>|| v^π - v* || ≤ ε</li>
 </ul>
 
 <div class="question">
-    <strong>Answer:</strong> (a), (b)
+<strong>Practice Question (Assignment 5, Q3)</strong><br>
+Solution: (a), (b)
 </div>
 
+</div>
+
+<div class="section">
 <h2>2. Policy Iteration</h2>
 
 <h3>Policy Evaluation</h3>
 
 <code>
-(Lπv)(s) = Σ π(a|s)[R(s,a) + γ Σ P(s'|s,a)v(s')]
+(Lπv)(s) = Σ π(a|s)[ R(s,a) + γ Σ P(s'|s,a)v(s') ]
 </code>
 
-<p>Find v such that Lπv = v</p>
+<p>PE solves for v such that Lπv = v</p>
 
 <h3>Policy Improvement</h3>
 
 <code>
-π(s) = argmax_a [R(s,a) + γ Σ P(s'|s,a)v(s')]
+π(s) = argmax_a [ R(s,a) + γ Σ P(s'|s,a)v(s') ]
 </code>
 
 <div class="question">
-    <strong>Answer:</strong> (b), (d)
+<strong>Assignment 5, Q1</strong><br>
+Solution: (b), (d)
 </div>
 
 <div class="question">
-    <strong>Answer:</strong> (d)
+<strong>Practice Assignment 5, Q1</strong><br>
+Solution: (d)
 </div>
 
 <div class="question">
-    <strong>Answer:</strong> (c)
+<strong>Practice Assignment 5, Q5</strong><br>
+Solution: (c)
 </div>
 
-<h2>3. Dynamic Programming Variants</h2>
+</div>
 
-<p>Classic DP requires full environment model.</p>
+<div class="section">
+<h2>3. Dynamic Programming (DP) Variants & GPI</h2>
+
+<p>Classic DP requires full model knowledge.</p>
 
 <h3>Asynchronous DP</h3>
-<p>Updates states in any order and converges if all states are visited.</p>
+<p>Updates states in any order; converges if all states are updated.</p>
 
 <h3>RTDP</h3>
-<p>Focuses only on sampled trajectories.</p>
+<p>Focuses updates along sampled trajectories.</p>
 
 <h3>Generalized Policy Iteration (GPI)</h3>
 
 <ul>
-    <li>Evaluation and improvement interact continuously</li>
-    <li>No need for full evaluation before improvement</li>
-    <li>Converges when policy becomes greedy with respect to its value</li>
+<li>Policy evaluation and improvement interact continuously</li>
+<li>No need to wait for full evaluation</li>
+<li>Converges when policy is greedy w.r.t its value</li>
 </ul>
 
+</div>
+
+<div class="section">
 <h2>4. Monte Carlo Methods</h2>
 
 <p>Used when transition model is unknown.</p>
 
 <ul>
-    <li>Learn from episodes</li>
-    <li>Updates happen at episode end</li>
+<li>Updates occur at end of episode</li>
 </ul>
 
 <div class="question">
-    <strong>Example:</strong> All visited states in trajectory can be updated.
+<strong>Assignment 5, Q2</strong><br>
+All states in trajectory can be updated.
 </div>
 
-<h3>First Visit vs Every Visit</h3>
+<h3>First-Visit vs Every-Visit</h3>
 
 <ul>
-    <li>First Visit: use first occurrence</li>
-    <li>Every Visit: use all occurrences</li>
+<li>First-Visit MC: only first occurrence</li>
+<li>Every-Visit MC: all occurrences</li>
 </ul>
 
 <h3>Exploration Strategies</h3>
 
 <ul>
-    <li>Exploring starts</li>
-    <li>ε-greedy policies</li>
+<li>Exploring starts</li>
+<li>ε-greedy policies</li>
 </ul>
 
 <div class="question">
-    <strong>Answer:</strong> (d)
+<strong>Practice Assignment 5, Q2</strong><br>
+Solution: (d)
 </div>
 
 <h3>ε-Greedy Policy</h3>
@@ -193,15 +226,18 @@
 <code>P(a) = ε/|A|</code>
 
 <div class="question">
-    <strong>Answer:</strong> (c)
+<strong>Practice Assignment 5, Q4</strong><br>
+Solution: (c)
 </div>
 
 <h3>On-Policy vs Off-Policy</h3>
 
 <ul>
-    <li>On-policy: same behavior and target policy</li>
-    <li>Off-policy: different policies, requires importance sampling</li>
+<li>On-policy: same policy used</li>
+<li>Off-policy: different policies, requires importance sampling</li>
 </ul>
+
+</div>
 
 </body>
 </html>

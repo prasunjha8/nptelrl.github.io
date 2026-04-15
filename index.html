@@ -1,34 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Portal</title>
-    <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #000;
-            font-family: Arial, Helvetica, sans-serif;
-        }
-        a {
-            color: #fff;
-            font-size: 32px;
-            text-decoration: none;
-            border: 2px solid #fff;
-            padding: 15px 30px;
-            transition: 0.3s;
-        }
-        a:hover {
-            background-color: #fff;
-            color: #000;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RL Notes Portal</title>
+
+<style>
+body {
+    margin: 0;
+    display: flex;
+    height: 100vh;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #000;
+    color: #fff;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background: #0a0a0a;
+    border-right: 1px solid #222;
+    padding: 20px;
+}
+
+.sidebar h2 {
+    margin-bottom: 20px;
+}
+
+.sidebar a {
+    display: block;
+    color: #ccc;
+    text-decoration: none;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 5px;
+    transition: 0.2s;
+}
+
+.sidebar a:hover {
+    background: #fff;
+    color: #000;
+}
+
+/* Content */
+.content {
+    flex: 1;
+    padding: 40px;
+}
+
+h1 {
+    border-bottom: 2px solid #fff;
+    padding-bottom: 10px;
+}
+</style>
 </head>
+
 <body>
+
+<div class="sidebar">
+    <h2>RL Notes</h2>
     <a href="week5.html">Week 5</a>
+    <a href="week6.html">Week 6</a>
+</div>
+
+<div class="content">
+    <h1>Welcome</h1>
+    <p>Select a week from the sidebar to view notes.</p>
+</div>
+
 </body>
 </html>

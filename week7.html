@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 7 — Eligibility Traces & n-step</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$','$'],['\\(','\\)']] },
+    options: { skipHtmlTags: ['script','noscript','style','textarea'] }
+  };
+</script>
+<style>
+  :root {
+    --bg: #0c0c0e;
+    --surface: #111114;
+    --surface2: #16161a;
+    --border: #222228;
+    --border2: #2a2a30;
+    --accent: #e8d5a3;
+    --accent2: #7c9cbf;
+    --accent3: #9cb87c;
+    --accent4: #bf9c7c;
+    --text: #e8e6e0;
+    --muted: #7a7870;
+    --dim: #3a3835;
+    --q-bg: #0f0f13;
+    --q-border: #2a2a38;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; line-height: 1.75; font-size: 15px; font-weight: 300; }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; }
+  .sidebar-header { padding: 28px 20px 20px; border-bottom: 1px solid var(--border); }
+  .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.05em; transition: color 0.15s; margin-bottom: 16px; }
+  .back-link:hover { color: var(--accent); }
+  .sidebar-title { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--text); line-height: 1.3; }
+  .sidebar-week { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent4); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+  .toc-label { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); padding: 0 8px; margin-bottom: 8px; margin-top: 4px; }
+  .toc-link { display: block; color: #7a7870; text-decoration: none; padding: 7px 10px; border-radius: 5px; font-size: 12.5px; transition: all 0.15s; border-left: 2px solid transparent; }
+  .toc-link:hover { color: var(--accent4); border-left-color: var(--accent4); background: rgba(191,156,124,0.05); }
+  .main { flex: 1; max-width: 820px; padding: 56px 48px 80px; }
+  .page-eyebrow { font-family: 'DM Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent4); margin-bottom: 12px; }
+  .page-title { font-family: 'DM Serif Display', serif; font-size: 42px; line-height: 1.1; letter-spacing: -0.025em; color: var(--text); margin-bottom: 16px; }
+  .page-intro { font-size: 15px; color: var(--muted); max-width: 560px; line-height: 1.8; margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+  .section { margin-bottom: 64px; scroll-margin-top: 32px; }
+  .section-number { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent4); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  h2 { font-family: 'DM Serif Display', serif; font-size: 28px; letter-spacing: -0.02em; color: var(--text); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  h3 { font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; color: var(--accent4); margin: 28px 0 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+  p { margin: 10px 0; color: #c0bdb5; }
+  .math-block { background: var(--surface2); border: 1px solid var(--border2); border-left: 3px solid var(--accent4); border-radius: 6px; padding: 16px 20px; margin: 16px 0; overflow-x: auto; font-size: 15px; }
+  .math-label { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
+  ul { list-style: none; margin: 12px 0; padding: 0; }
+  ul li { padding: 4px 0 4px 20px; position: relative; color: #c0bdb5; font-size: 14.5px; }
+  ul li::before { content: '—'; position: absolute; left: 0; color: var(--dim); font-family: 'DM Mono', monospace; }
+  .question { background: var(--q-bg); border: 1px solid var(--q-border); border-radius: 8px; padding: 20px 22px; margin: 20px 0; position: relative; }
+  .question::before { content: 'Q'; position: absolute; top: -10px; left: 16px; background: var(--accent4); color: #0c0c0e; font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 3px; letter-spacing: 0.05em; }
+  .question-title { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; margin-top: 2px; }
+  .question p { font-size: 13.5px; color: #a8a6a0; margin: 6px 0; }
+  .answer { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border2); }
+  .answer-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .answer p { font-size: 13px; color: #9a9890; line-height: 1.7; }
+  .answer-value { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--accent4); font-weight: 500; margin-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13.5px; }
+  th { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--border2); text-align: left; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: #b8b6b0; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.015); }
+  .callout { background: rgba(191,156,124,0.06); border: 1px solid rgba(191,156,124,0.15); border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 13.5px; color: #c8b8a0; }
+  .callout-green { background: rgba(156,184,124,0.06); border: 1px solid rgba(156,184,124,0.15); border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 13.5px; color: #a8c8a0; }
+  .diagram-wrap { background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 28px; margin: 20px 0; display: flex; justify-content: center; overflow-x: auto; }
+  .trace-visual { display: flex; align-items: center; gap: 0; margin: 20px 0; overflow-x: auto; padding-bottom: 8px; }
+  .trace-state { display: flex; flex-direction: column; align-items: center; min-width: 56px; }
+  .trace-circle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; font-size: 11px; border: 1.5px solid; }
+  .trace-circle.visited { background: rgba(191,156,124,0.15); border-color: var(--accent4); color: var(--accent4); }
+  .trace-circle.current { background: rgba(156,184,124,0.15); border-color: var(--accent3); color: var(--accent3); }
+  .trace-circle.future { background: transparent; border-color: var(--border2); color: var(--muted); }
+  .trace-bar { height: 6px; width: 40px; border-radius: 3px; margin-top: 8px; }
+  .trace-label { font-family: 'DM Mono', monospace; font-size: 9px; color: var(--muted); margin-top: 4px; }
+  .trace-arrow { color: var(--dim); font-size: 18px; padding: 0 2px; margin-bottom: 22px; }
+  .code-block { font-family: 'DM Mono', monospace; font-size: 13px; background: #0a0a0d; border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; margin: 14px 0; overflow-x: auto; color: #a8c4d8; line-height: 2; }
+  .page-nav { margin-top: 64px; padding-top: 32px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; }
+  .nav-btn { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.05em; padding: 10px 16px; border: 1px solid var(--border2); border-radius: 6px; transition: all 0.2s; }
+  .nav-btn:hover { color: var(--accent4); border-color: rgba(191,156,124,0.3); background: rgba(191,156,124,0.04); }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <a class="back-link" href="index.html">← Back to Portal</a>
+      <div class="sidebar-week">Week 7</div>
+      <div class="sidebar-title">n-step &amp; Eligibility Traces</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="toc-label">Contents</div>
+      <a class="toc-link" href="#nstep">1. n-step Bootstrapping</a>
+      <a class="toc-link" href="#traces">2. Eligibility Traces</a>
+      <a class="toc-link" href="#trace-types">3. Accumulating vs Replacing</a>
+      <a class="toc-link" href="#sarsa-lambda">4. SARSA(λ)</a>
+      <a class="toc-link" href="#q-lambda">5. Watkins Q(λ)</a>
+      <a class="toc-link" href="#offpolicy">6. Off-Policy Traces</a>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <div class="page-eyebrow">Week 7 · Examination Notes</div>
+    <h1 class="page-title">n-step &amp; Eligibility Traces</h1>
+    <p class="page-intro">Bridging TD(0) and Monte Carlo through n-step bootstrapping, forward vs backward views, TD(λ), SARSA(λ), and Watkins Q(λ) for control with traces.</p>
+
+    <!-- SECTION 1 -->
+    <section class="section" id="nstep">
+      <div class="section-number">Section 01</div>
+      <h2>n-step Bootstrapping</h2>
+
+      <p>TD(0) looks exactly 1 step ahead; Monte Carlo looks all the way to the episode end. <em>n-step methods</em> generalise by waiting exactly $n$ real steps before bootstrapping:</p>
+
+      <!-- Spectrum diagram -->
+      <div class="diagram-wrap">
+        <svg width="480" height="80" viewBox="0 0 480 80">
+          <defs>
+            <marker id="a7" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <polygon points="0 0, 6 3, 0 6" fill="#5a5a60"/>
+            </marker>
+          </defs>
+          <line x1="40" y1="40" x2="440" y2="40" stroke="#2a2a38" stroke-width="2" marker-end="url(#a7)"/>
+          <!-- Ticks -->
+          <line x1="40" y1="34" x2="40" y2="46" stroke="#5a5a60" stroke-width="1.5"/>
+          <line x1="240" y1="34" x2="240" y2="46" stroke="#5a5a60" stroke-width="1.5"/>
+          <line x1="420" y1="34" x2="420" y2="46" stroke="#5a5a60" stroke-width="1.5"/>
+          <!-- Labels -->
+          <text x="40" y="28" fill="#7c9cbf" font-size="10" text-anchor="middle">n=1</text>
+          <text x="40" y="62" fill="#7c9cbf" font-size="9" text-anchor="middle">TD(0)</text>
+          <text x="240" y="28" fill="#bf9c7c" font-size="10" text-anchor="middle">n=k</text>
+          <text x="240" y="62" fill="#bf9c7c" font-size="9" text-anchor="middle">n-step TD</text>
+          <text x="420" y="28" fill="#e8d5a3" font-size="10" text-anchor="middle">n=∞</text>
+          <text x="420" y="62" fill="#e8d5a3" font-size="9" text-anchor="middle">Monte Carlo</text>
+          <!-- gradient bar -->
+          <defs>
+            <linearGradient id="specg" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#7c9cbf" stop-opacity="0.7"/>
+              <stop offset="100%" stop-color="#e8d5a3" stop-opacity="0.7"/>
+            </linearGradient>
+          </defs>
+          <rect x="40" y="38" width="380" height="4" fill="url(#specg)" rx="2"/>
+        </svg>
+      </div>
+
+      <h3>The n-step Return</h3>
+      <p>The n-step truncated return looks $n$ real steps into the future, then bootstraps with the current value estimate:</p>
+
+      <div class="math-block">
+        <div class="math-label">n-step Truncated Return</div>
+        $$G_t^{(n)} = R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \cdots + \gamma^{n-1} R_{t+n} + \gamma^n V_t(s_{t+n})$$
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 7 · Q1</div>
+        <p>Which is the correct n-step truncated return?<br>
+        (a) $R_{t+n} + \gamma^n V_t(s_{t+n})$<br>
+        (b) $R_{t+1} + \gamma R_{t+2} + \cdots + \gamma^{n-1}R_{t+n} + \gamma^n V_t(s_{t+n})$<br>
+        (c) $\gamma R_{t+1} + \gamma^2 R_{t+2} + \cdots + \gamma^n R_{t+n} + V_t(s_{t+n})$</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (b)</div>
+          <p>Rewards are discounted starting from $R_{t+1}$ with $\gamma^0 = 1$, up to $R_{t+n}$ with $\gamma^{n-1}$, then the value estimate gets $\gamma^n$.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 7 · Q1</div>
+        <p>Which equals $G_t^{(3)}$?<br>
+        (a) $R_{t+1} + \gamma R_{t+2} + \gamma^2 V(s_{t+2})$<br>
+        (b) $R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \gamma^3 V(s_{t+3})$<br>
+        (c) $R_{t+1} + \gamma R_{t+2} + \gamma^2 R_{t+3} + \gamma^3 V(s_{t+4})$</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (b)</div>
+          <p>Substitute $n=3$: three real rewards ($R_{t+1}, R_{t+2}, R_{t+3}$) with discounts $1, \gamma, \gamma^2$, then $\gamma^3 V(s_{t+3})$.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section class="section" id="traces">
+      <div class="section-number">Section 02</div>
+      <h2>Eligibility Traces &amp; TD(λ)</h2>
+
+      <p>Rather than picking a fixed $n$, <strong>Eligibility Traces</strong> elegantly implement a <em>weighted average of all n-step returns at once</em>. Every state has a trace $E_t(s)$ tracking how "eligible" it is for credit.</p>
+
+      <h3>Forward View vs Backward View</h3>
+
+      <table>
+        <thead>
+          <tr><th>View</th><th>How it works</th><th>Practical?</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Forward View</td>
+            <td>Target $G_t^\lambda$ is weighted average of all n-step returns. Conceptually elegant.</td>
+            <td>No — requires waiting until end of episode</td>
+          </tr>
+          <tr>
+            <td>Backward View</td>
+            <td>Maintain trace $E_t(s)$ per state; update all states at every step using current TD error.</td>
+            <td>Yes — fully online, equivalent to forward view</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Trace visualization -->
+      <div class="diagram-wrap">
+        <svg width="480" height="130" viewBox="0 0 480 130">
+          <defs>
+            <marker id="a8" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <polygon points="0 0, 6 3, 0 6" fill="#5a5a60"/>
+            </marker>
+          </defs>
+          <!-- Timeline -->
+          <line x1="30" y1="65" x2="460" y2="65" stroke="#222228" stroke-width="1.5" marker-end="url(#a8)"/>
+          <!-- States visited -->
+          <text x="30" y="20" fill="#5a5a60" font-size="9">time →</text>
+          <!-- s1 visited at t=1 -->
+          <circle cx="80" cy="65" r="12" fill="#1a1a10" stroke="#e8d5a3" stroke-width="1.5"/>
+          <text x="80" y="69" fill="#e8d5a3" font-size="9" text-anchor="middle">s₁</text>
+          <!-- s2 at t=2 -->
+          <circle cx="160" cy="65" r="12" fill="#1a1a10" stroke="#bf9c7c" stroke-width="1.5"/>
+          <text x="160" y="69" fill="#bf9c7c" font-size="9" text-anchor="middle">s₂</text>
+          <!-- s3 at t=3 -->
+          <circle cx="240" cy="65" r="12" fill="#1a1a10" stroke="#9cb87c" stroke-width="1.5"/>
+          <text x="240" y="69" fill="#9cb87c" font-size="9" text-anchor="middle">s₃</text>
+          <!-- current -->
+          <circle cx="340" cy="65" r="14" fill="#162010" stroke="#9cb87c" stroke-width="2"/>
+          <text x="340" y="62" fill="#9cb87c" font-size="8" text-anchor="middle">curr</text>
+          <text x="340" y="74" fill="#9cb87c" font-size="9" text-anchor="middle">s₄</text>
+          <!-- TD error propagates backward -->
+          <path d="M 326 55 Q 290 30 252 52" stroke="#3a4a30" stroke-width="1.5" fill="none" marker-end="url(#a8)"/>
+          <path d="M 326 55 Q 220 15 172 52" stroke="#3a4030" stroke-width="1.2" fill="none" marker-end="url(#a8)"/>
+          <path d="M 326 55 Q 180 5 92 52" stroke="#3a3820" stroke-width="1" fill="none" stroke-dasharray="3 2" marker-end="url(#a8)"/>
+          <text x="290" y="26" fill="#5a6850" font-size="9">δ spreads credit backward</text>
+          <!-- Trace bars below -->
+          <rect x="68" y="84" width="24" height="4" rx="2" fill="#3a3820" opacity="0.5"/>
+          <text x="80" y="98" fill="#5a5a50" font-size="8" text-anchor="middle">E≈0</text>
+          <rect x="148" y="84" width="24" height="4" rx="2" fill="#4a4030" opacity="0.7"/>
+          <text x="160" y="98" fill="#6a6050" font-size="8" text-anchor="middle">E small</text>
+          <rect x="228" y="84" width="24" height="4" rx="2" fill="#6a5030" opacity="0.8"/>
+          <text x="240" y="98" fill="#8a7060" font-size="8" text-anchor="middle">E med</text>
+          <rect x="326" y="84" width="28" height="4" rx="2" fill="#bf9c7c"/>
+          <text x="340" y="98" fill="#bf9c7c" font-size="8" text-anchor="middle">E=1</text>
+          <text x="240" y="120" fill="#5a5a60" font-size="9" text-anchor="middle">traces decay by γλ at each step</text>
+        </svg>
+      </div>
+
+      <div class="callout">
+        💡 The trace $E_t(s)$ acts as a "recency-weighted memory" — states visited recently have high eligibility and receive more credit when a TD error arrives.
+      </div>
+
+      <h3>λ-Return: Bridging TD and MC</h3>
+      <p>The $\lambda$-return is a geometrically-weighted average of all n-step returns:</p>
+
+      <div class="math-block">
+        <div class="math-label">Connection to λ=0 and λ=1</div>
+        $$\lambda = 0 \implies TD(0) \qquad \lambda = 1 \implies \text{Monte Carlo}$$
+      </div>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 7 · Q3</div>
+        <p>Is TD(λ) with $\lambda=1$ essentially Monte Carlo?</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ Yes</div>
+          <p>With $\lambda=1$, no decay — every state gets full credit for all future rewards until terminal, exactly the MC return $G_t$.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 7 · Q3</div>
+        <p>Assertion: TD(1) extends MC for continuing tasks.<br>
+        Reason: TD(1) with eligibility traces is an offline algorithm.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (c) — Assertion true, Reason false</div>
+          <p>TD(1) achieves the MC return but applies updates <em>online</em> at each step via the trace mechanism — unlike true MC which is fully offline. This lets TD(1) work on continuing (non-episodic) tasks.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 7 · Q6</div>
+        <p>Assertion: Forward view trace target can be used for mid-episode updates.<br>
+        Reason: $G_t^\lambda$ is computable after a finite number of steps in all cases.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (d) — Both false</div>
+          <p>The forward view target requires knowing all future n-step returns — impossible until the episode ends. Both the assertion and the reason are false.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 7 · Q5</div>
+        <p>For $\lambda \in (0,1)$, the one-step return always gets the maximum weight in the λ-return. True or false?</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ False</div>
+          <p>Weight depends on both $\lambda$ and episode length. For very short episodes with high $\lambda$, a later return can carry more total normalised weight.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section class="section" id="trace-types">
+      <div class="section-number">Section 03</div>
+      <h2>Accumulating vs Replacing Traces</h2>
+
+      <p>When a state is visited, how do we update its trace?</p>
+
+      <table>
+        <thead>
+          <tr><th>Type</th><th>On visit to state s</th><th>Otherwise</th><th>Issue</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Accumulating</td>
+            <td>$E_t(s) = \gamma\lambda E_{t-1}(s) + 1$</td>
+            <td>$E_t(s) = \gamma\lambda E_{t-1}(s)$</td>
+            <td>Trace can exceed 1 → over-updating</td>
+          </tr>
+          <tr>
+            <td>Replacing</td>
+            <td>$E_t(s) = 1$</td>
+            <td>$E_t(s) = \gamma\lambda E_{t-1}(s)$</td>
+            <td>None — capped at 1, often better empirically</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="math-block">
+        <div class="math-label">Replacing Trace Update Rule</div>
+        $$E_t(s) = \begin{cases} 1 & \text{if } s_t = s \\ \gamma\lambda\, E_{t-1}(s) & \text{otherwise} \end{cases}$$
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 7 · Q2</div>
+        <p>Which is the correct way to implement replacing traces?</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (d) — The formula above</div>
+          <p>Simply reset to 1 if currently visiting that state; otherwise decay by $\gamma\lambda$ as usual.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section class="section" id="sarsa-lambda">
+      <div class="section-number">Section 04</div>
+      <h2>SARSA(λ)</h2>
+
+      <p>SARSA(λ) extends SARSA by applying traces to <em>state-action pairs</em> $E_t(s,a)$, not just states. This distributes credit backward through the entire trajectory of $(s,a)$ pairs.</p>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 7 · Q2</div>
+        <p>SARSA(λ) applies TD(λ) prediction to just the states rather than state-action pairs. True or false?</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ False</div>
+          <p>Control algorithms must evaluate actions to form policies. SARSA(λ) maintains traces for $(s,a)$ pairs and updates $Q(s,a)$ directly.</p>
+        </div>
+      </div>
+
+      <h3>Aggressive Replacing Traces for SARSA(λ)</h3>
+      <p>When visiting state $s$ and taking action $a_1$, we must zero out traces for all <em>other</em> actions in $s$:</p>
+
+      <div class="math-block">
+        <div class="math-label">SARSA(λ) Replacing Trace — State-Action</div>
+        $$E_t(s,a) = \begin{cases} 1 & \text{if } s_t = s,\; a_t = a \\ 0 & \text{if } s_t = s,\; a_t \neq a \\ \gamma\lambda\, E_{t-1}(s,a) & \text{otherwise} \end{cases}$$
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 7 · Q9</div>
+        <p>Why do we set $E_t(s,a) = 0$ for all $a \neq a_1$ when state $s$ is visited with action $a_1$?<br>
+        (i) Rewards from $a_1$ shouldn't be attributed to previous actions in $s$.<br>
+        (ii) Assumed time between visits is large enough to decay trace to 0.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ Only (i)</div>
+          <p>If you take $a_1$ in $s$, the subsequent reward causally comes from $a_1$. Allowing old actions' traces to remain would give them false credit for $a_1$'s outcome.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 7 · Q7</div>
+        <p>Which is the correct replacing trace update for SARSA(λ) to only update the estimate for action $a$ taken in state $s$?</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (d) — The three-case formula above</div>
+          <p>Match → set to 1. Same state, different action → zero. Different state → decay normally by $\gamma\lambda$.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section class="section" id="q-lambda">
+      <div class="section-number">Section 05</div>
+      <h2>Watkins's Q(λ)</h2>
+
+      <p>Watkins's Q(λ) combines Q-learning with eligibility traces. Because Q-learning targets the optimal (greedy) policy, traces can only safely accumulate while the agent <em>actually takes the greedy action</em>.</p>
+
+      <div class="callout-green">
+        ⚠️ The moment an exploratory (non-greedy) action is taken, <strong>all traces are cut to zero</strong>. Subsequent experience no longer represents the optimal policy so backward credit assignment would be misleading.
+      </div>
+
+      <!-- Q-lambda trace cut diagram -->
+      <div class="diagram-wrap">
+        <svg width="460" height="100" viewBox="0 0 460 100">
+          <defs>
+            <marker id="a9" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <polygon points="0 0, 6 3, 0 6" fill="#5a5a60"/>
+            </marker>
+          </defs>
+          <line x1="20" y1="50" x2="440" y2="50" stroke="#222228" stroke-width="1.5" marker-end="url(#a9)"/>
+          <!-- greedy actions -->
+          <circle cx="70" cy="50" r="10" fill="#1a1a10" stroke="#9cb87c" stroke-width="1.5"/>
+          <text x="70" y="54" fill="#9cb87c" font-size="8" text-anchor="middle">✓</text>
+          <circle cx="130" cy="50" r="10" fill="#1a1a10" stroke="#9cb87c" stroke-width="1.5"/>
+          <text x="130" y="54" fill="#9cb87c" font-size="8" text-anchor="middle">✓</text>
+          <!-- exploratory action - cut -->
+          <circle cx="210" cy="50" r="12" fill="#200a0a" stroke="#bf4040" stroke-width="2"/>
+          <text x="210" y="54" fill="#bf4040" font-size="9" text-anchor="middle">ε</text>
+          <!-- cut line -->
+          <line x1="210" y1="20" x2="210" y2="80" stroke="#bf4040" stroke-width="1" stroke-dasharray="3 2"/>
+          <text x="210" y="16" fill="#bf4040" font-size="9" text-anchor="middle">CUT: E=0</text>
+          <!-- after cut -->
+          <circle cx="290" cy="50" r="10" fill="#1a1a10" stroke="#9cb87c" stroke-width="1.5"/>
+          <text x="290" y="54" fill="#9cb87c" font-size="8" text-anchor="middle">✓</text>
+          <circle cx="360" cy="50" r="10" fill="#1a1a10" stroke="#9cb87c" stroke-width="1.5"/>
+          <text x="360" y="54" fill="#9cb87c" font-size="8" text-anchor="middle">✓</text>
+          <!-- labels -->
+          <text x="100" y="82" fill="#5a6850" font-size="9" text-anchor="middle">traces grow</text>
+          <text x="325" y="82" fill="#5a6850" font-size="9" text-anchor="middle">traces restart from 0</text>
+        </svg>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 7 · Q8</div>
+        <p>Assertion: With ε-greedy exploration and Watkins Q(λ), ε must be kept low.<br>
+        Reason: High ε causes traces to be too short, negating eligibility trace advantages.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (a) — Both true, Reason correctly explains</div>
+          <p>Every exploratory action zeroes all traces. High ε means frequent cuts → traces never grow long → algorithm degrades to plain 1-step Q-learning.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 7 · Q4</div>
+        <p>In Q(λ), if the first action is exploratory (non-optimal), is a TD update still made for that transition?</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ Yes</div>
+          <p>A 1-step Q-learning update is always made for the actual transition. Only the traces of previous states are cut — the immediate update still happens.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6 -->
+    <section class="section" id="offpolicy">
+      <div class="section-number">Section 06</div>
+      <h2>Off-Policy Learning with Traces</h2>
+
+      <p>For off-policy TD(λ), the importance sampling ratio $\rho_t = \frac{\pi(s_t,a_t)}{\mu(s_t,a_t)}$ must be folded into every trace update:</p>
+
+      <div class="math-block">
+        <div class="math-label">Off-Policy Trace Update</div>
+        $$E_t(s) = \begin{cases} \rho_t\left(\gamma\lambda\, E_{t-1}(s) + 1\right) & \text{if } s_t = s \\ \rho_t\,\gamma\lambda\, E_{t-1}(s) & \text{otherwise} \end{cases}$$
+      </div>
+
+      <div class="callout">
+        💡 If the behavior policy diverges heavily from the target, $\rho_t \to 0$, which naturally <em>cuts</em> the trace — the same effect as an exploratory action in Q(λ), but automatic.
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 7 · Q10</div>
+        <p>In off-policy TD(λ), which is the correct trace update given importance ratio $\rho_t$?</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (b) — The formula above</div>
+          <p>Multiply the entire updated trace by $\rho_t$ at every step to properly weight the credit assignment by how likely the target policy was to take the observed action.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 7 · Q4</div>
+        <p>Assertion: The behavior policy need not have non-zero probability for all actions.<br>
+        Reason: If estimation policy has zero probability for an action, behavior policy can too without causing problems.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (a) — Both true, Reason correctly explains</div>
+          <p>The behavior policy only needs <em>coverage</em> for actions the target policy might take. If the target policy assigns zero probability to an action, it doesn't matter if behavior policy also skips it — the IS ratio handles this correctly.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="page-nav">
+      <a class="nav-btn" href="week6.html">← Week 6</a>
+      <a class="nav-btn" href="index.html">Portal →</a>
+    </div>
+  </main>
+</div>
+</body>
+</html>

@@ -3,201 +3,523 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Week 6 - Reinforcement Learning</title>
+<title>Week 6 — TD Learning & Control</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$','$'],['\\(','\\)']] },
+    options: { skipHtmlTags: ['script','noscript','style','textarea'] }
+  };
+</script>
 <style>
-body {
-    margin: 0;
-    padding: 40px;
-    background-color: #000;
-    color: #fff;
-    font-family: "Segoe UI", Arial, sans-serif;
-    line-height: 1.7;
-}
-
-h1 {
-    font-size: 36px;
-    border-bottom: 2px solid #fff;
-    padding-bottom: 10px;
-}
-
-h2 {
-    margin-top: 40px;
-    border-left: 4px solid #fff;
-    padding-left: 10px;
-}
-
-h3 {
-    margin-top: 25px;
-    color: #ccc;
-}
-
-code {
-    display: block;
-    background: #111;
-    padding: 12px;
-    margin: 10px 0;
-    border-left: 3px solid #fff;
-}
-
-.section {
-    margin-bottom: 40px;
-}
-
-.question {
-    margin-top: 15px;
-    padding: 15px;
-    background: #111;
-    border-left: 4px solid #fff;
-}
-
-ul {
-    margin-left: 20px;
-}
+  :root {
+    --bg: #0c0c0e;
+    --surface: #111114;
+    --surface2: #16161a;
+    --border: #222228;
+    --border2: #2a2a30;
+    --accent: #e8d5a3;
+    --accent2: #7c9cbf;
+    --accent3: #9cb87c;
+    --text: #e8e6e0;
+    --muted: #7a7870;
+    --dim: #3a3835;
+    --q-bg: #0f0f13;
+    --q-border: #2a2a38;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; line-height: 1.75; font-size: 15px; font-weight: 300; }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; }
+  .sidebar-header { padding: 28px 20px 20px; border-bottom: 1px solid var(--border); }
+  .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); text-decoration: none; font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.05em; transition: color 0.15s; margin-bottom: 16px; }
+  .back-link:hover { color: var(--accent); }
+  .sidebar-title { font-family: 'DM Serif Display', serif; font-size: 17px; color: var(--text); line-height: 1.3; }
+  .sidebar-week { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent2); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; }
+  .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+  .toc-label { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); padding: 0 8px; margin-bottom: 8px; margin-top: 4px; }
+  .toc-link { display: block; color: #7a7870; text-decoration: none; padding: 7px 10px; border-radius: 5px; font-size: 12.5px; transition: all 0.15s; border-left: 2px solid transparent; }
+  .toc-link:hover { color: var(--accent2); border-left-color: var(--accent2); background: rgba(124,156,191,0.05); }
+  .main { flex: 1; max-width: 820px; padding: 56px 48px 80px; }
+  .page-eyebrow { font-family: 'DM Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent2); margin-bottom: 12px; }
+  .page-title { font-family: 'DM Serif Display', serif; font-size: 42px; line-height: 1.1; letter-spacing: -0.025em; color: var(--text); margin-bottom: 16px; }
+  .page-intro { font-size: 15px; color: var(--muted); max-width: 560px; line-height: 1.8; margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border); }
+  .section { margin-bottom: 64px; scroll-margin-top: 32px; }
+  .section-number { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--accent2); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  h2 { font-family: 'DM Serif Display', serif; font-size: 28px; letter-spacing: -0.02em; color: var(--text); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  h3 { font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; color: var(--accent2); margin: 28px 0 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+  p { margin: 10px 0; color: #c0bdb5; }
+  .math-block { background: var(--surface2); border: 1px solid var(--border2); border-left: 3px solid var(--accent2); border-radius: 6px; padding: 16px 20px; margin: 16px 0; overflow-x: auto; font-size: 15px; }
+  .math-label { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
+  ul { list-style: none; margin: 12px 0; padding: 0; }
+  ul li { padding: 4px 0 4px 20px; position: relative; color: #c0bdb5; font-size: 14.5px; }
+  ul li::before { content: '—'; position: absolute; left: 0; color: var(--dim); font-family: 'DM Mono', monospace; }
+  .question { background: var(--q-bg); border: 1px solid var(--q-border); border-radius: 8px; padding: 20px 22px; margin: 20px 0; position: relative; }
+  .question::before { content: 'Q'; position: absolute; top: -10px; left: 16px; background: var(--accent2); color: #0c0c0e; font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 3px; letter-spacing: 0.05em; }
+  .question-title { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; margin-top: 2px; }
+  .question p { font-size: 13.5px; color: #a8a6a0; margin: 6px 0; }
+  .answer { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border2); }
+  .answer-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--accent3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .answer p { font-size: 13px; color: #9a9890; line-height: 1.7; }
+  .answer-value { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--accent2); font-weight: 500; margin-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13.5px; }
+  th { font-family: 'DM Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 10px 14px; border-bottom: 1px solid var(--border2); text-align: left; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: #b8b6b0; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.015); }
+  .callout { background: rgba(124,156,191,0.06); border: 1px solid rgba(124,156,191,0.15); border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 13.5px; color: #a0b8cc; }
+  .callout-warn { background: rgba(232,213,163,0.05); border: 1px solid rgba(232,213,163,0.15); border-radius: 6px; padding: 14px 18px; margin: 16px 0; font-size: 13.5px; color: #c8c0a0; }
+  .diagram-wrap { background: var(--surface2); border: 1px solid var(--border2); border-radius: 8px; padding: 28px; margin: 20px 0; display: flex; justify-content: center; overflow-x: auto; }
+  .step-trace { background: #0a0a0d; border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; margin: 14px 0; font-family: 'DM Mono', monospace; font-size: 12.5px; color: #9ab8cc; line-height: 2; }
+  .step-trace .step-num { color: var(--muted); margin-right: 8px; }
+  .step-trace .result { color: var(--accent3); }
+  .page-nav { margin-top: 64px; padding-top: 32px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; }
+  .nav-btn { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); text-decoration: none; font-family: 'DM Mono', monospace; font-size: 12px; letter-spacing: 0.05em; padding: 10px 16px; border: 1px solid var(--border2); border-radius: 6px; transition: all 0.2s; }
+  .nav-btn:hover { color: var(--accent2); border-color: rgba(124,156,191,0.3); background: rgba(124,156,191,0.04); }
 </style>
 </head>
-
 <body>
-<a href="index.html" style="
-    color:white;
-    text-decoration:none;
-    border:1px solid white;
-    padding:8px 15px;
-    display:inline-block;
-    margin-bottom:20px;
-">
-← Back
-</a>
-<h1>Reinforcement Learning Examination Notes: Week 6</h1>
+<div class="layout">
 
-<p>These notes cover Temporal-Difference Learning, SARSA, Q-Learning, Importance Sampling, and Planning vs Learning.</p>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <a class="back-link" href="index.html">← Back to Portal</a>
+      <div class="sidebar-week">Week 6</div>
+      <div class="sidebar-title">TD Learning &amp; Control</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="toc-label">Contents</div>
+      <a class="toc-link" href="#td0">1. TD(0) Learning</a>
+      <a class="toc-link" href="#comparison">2. DP vs TD vs MC</a>
+      <a class="toc-link" href="#control">3. On/Off-Policy Control</a>
+      <a class="toc-link" href="#is">4. Importance Sampling</a>
+      <a class="toc-link" href="#planning">5. Planning vs Learning</a>
+    </nav>
+  </aside>
 
-<div class="section">
-<h2>1. Temporal Difference (TD) Learning & TD(0)</h2>
+  <main class="main">
+    <div class="page-eyebrow">Week 6 · Examination Notes</div>
+    <h1 class="page-title">TD Learning &amp; Control</h1>
+    <p class="page-intro">Temporal-Difference learning, model-free control with SARSA and Q-Learning, off-policy evaluation via importance sampling, and planning vs learning.</p>
 
-<p>TD combines Monte Carlo and Dynamic Programming. It learns from experience and bootstraps.</p>
+    <!-- SECTION 1 -->
+    <section class="section" id="td0">
+      <div class="section-number">Section 01</div>
+      <h2>Temporal Difference Learning &amp; TD(0)</h2>
 
-<h3>TD(0) Update</h3>
-<code>V(s_t) ← V(s_t) + α [R_{t+1} + γV(s_{t+1}) - V(s_t)]</code>
+      <p>TD learning is a hybrid of Monte Carlo and Dynamic Programming. Like MC, it learns directly from experience with no model. Like DP, it <strong>bootstraps</strong> — updating estimates based on other learned estimates without waiting for a final outcome.</p>
 
-<p><strong>TD Error:</strong></p>
-<code>δ = R_{t+1} + γV(s_{t+1}) - V(s_t)</code>
+      <div class="callout">
+        💡 The key insight: TD doesn't wait for the episode to end. It updates after <em>every single step</em> using the next state's estimated value.
+      </div>
 
-<div class="question">
-<strong>Practice Assignment 6 Q1</strong><br>
-Solution: (c)
+      <h3>TD(0) Update Equation</h3>
+
+      <div class="math-block">
+        <div class="math-label">TD(0) State-Value Update</div>
+        $$V(s_t) \;\leftarrow\; V(s_t) + \alpha \underbrace{\left[R_{t+1} + \gamma V(s_{t+1}) - V(s_t)\right]}_{\delta_t\;\text{(TD error)}}$$
+      </div>
+
+      <p>Breaking this down:</p>
+      <ul>
+        <li><strong>Target:</strong> $R_{t+1} + \gamma V(s_{t+1})$ — uses one real reward + estimate of next state</li>
+        <li><strong>TD Error $\delta$:</strong> difference between target and current estimate</li>
+        <li><strong>$\alpha$:</strong> learning rate controlling how much we shift toward the target</li>
+      </ul>
+
+      <div class="math-block">
+        <div class="math-label">TD Error (δ)</div>
+        $$\delta_t = R_{t+1} + \gamma V(s_{t+1}) - V(s_t)$$
+      </div>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 6 · Q1</div>
+        <p>In the SARSA update $Q_{new}(s_t,a_t) = Q_{old}(s_t,a_t) + \alpha[R_{t+1} + \gamma Q_{old}(s_{t+1},a_{t+1}) - Q_{old}(s_t,a_t)]$, which part is the TD error $\delta$?<br>
+        (a) $R_{t+1} + \gamma Q_{old}(s_{t+1},a_{t+1})$<br>
+        (b) $\alpha[\ldots]$<br>
+        (c) $R_{t+1} + \gamma Q_{old}(s_{t+1},a_{t+1}) - Q_{old}(s_t,a_t)$<br>
+        (d) $Q_{old}(s_{t+1},a_{t+1}) - Q_{old}(s_t,a_t)$</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (c)</div>
+          <p>TD error is the difference between the target and the current estimate, <em>before</em> multiplying by $\alpha$. The $\alpha$ is just the learning rate applied on top.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 6 · Q4</div>
+        <p>Which are true for TD(0)?<br>
+        (i) Uses unbiased sample of the return.<br>
+        (ii) Uses a sample of the reward from the distribution of rewards.<br>
+        (iii) Uses the current estimate of value function.<br>
+        (a) Only (ii)   (b) Both (ii) and (iii)   (c) Both (i) and (ii)   (d) Only (iii)</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (b)</div>
+          <p>TD(0) bootstraps — it relies on its own (potentially wrong) value estimates, making it <strong>biased</strong> (so (i) is false). It does sample a real reward (ii) and uses the current value estimate (iii).</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 6 · Q2</div>
+        <p>Which are true for TD(0) (assuming a truly Markov environment)?<br>
+        (a) Uses the full return to update values.<br>
+        (b) TD(0) and MC converge to the same value function given finite samples.<br>
+        (c) TD(0) and MC converge to the same value function given infinite samples.<br>
+        (d) TD error is...</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (c)</div>
+          <p>With infinite samples in a true Markov environment, both converge to the true $v^\pi$. With finite data they diverge: MC minimises MSE on the batch; TD(0) finds the maximum-likelihood Markov model solution.</p>
+        </div>
+      </div>
+
+      <h3>Worked Numerical Example — TD(0)</h3>
+      <p>MDP with states A, B. Trajectory: <code>A→3→B→2→A→5→B→2→A→4→END</code>. Parameters: $\gamma=1$, $\alpha=1$, $V(A)=V(B)=0$ initially.</p>
+      <p>With $\alpha=1$, the update simplifies to: $V(s_t) = R_{t+1} + V(s_{t+1})$</p>
+
+      <div class="step-trace">
+        <span class="step-num">Step 1:</span> A →3→ B &nbsp; → &nbsp; V(A) = 3 + V(B) = 3 + 0 = <span class="result">3</span><br>
+        <span class="step-num">Step 2:</span> B →2→ A &nbsp; → &nbsp; V(B) = 2 + V(A) = 2 + 3 = <span class="result">5</span><br>
+        <span class="step-num">Step 3:</span> A →5→ B &nbsp; → &nbsp; V(A) = 5 + V(B) = 5 + 5 = <span class="result">10</span><br>
+        <span class="step-num">Step 4:</span> B →2→ A &nbsp; → &nbsp; V(B) = 2 + V(A) = 2 + 10 = <span class="result">12</span><br>
+        <span class="step-num">Step 5:</span> A →4→ END &nbsp; → &nbsp; V(A) = 4 + 0 = <span class="result">4</span>
+      </div>
+
+      <div class="callout">
+        Final: <strong>V(A) = 4, V(B) = 12</strong>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 6 · Q9</div>
+        <p>Using the trajectory above with $\gamma=1$, $\alpha=1$, initial values 0. What are final V(A), V(B)?</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (c) — V(A) = 4, V(B) = 12</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section class="section" id="comparison">
+      <div class="section-number">Section 02</div>
+      <h2>Comparison: DP vs TD vs MC</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Backup Type</th>
+            <th>Bootstrapping?</th>
+            <th>Needs Full Model?</th>
+            <th>Updates When?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Dynamic Programming</td>
+            <td>Full (expected values)</td>
+            <td>Yes</td>
+            <td>Yes</td>
+            <td>Each sweep</td>
+          </tr>
+          <tr>
+            <td>Temporal Difference</td>
+            <td>Sample (single transition)</td>
+            <td>Yes</td>
+            <td>No</td>
+            <td>Each step</td>
+          </tr>
+          <tr>
+            <td>Monte Carlo</td>
+            <td>Sample (full episode)</td>
+            <td>No</td>
+            <td>No</td>
+            <td>End of episode</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Backup diagram -->
+      <div class="diagram-wrap">
+        <svg width="480" height="130" viewBox="0 0 480 130">
+          <defs>
+            <marker id="ad" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <polygon points="0 0, 6 3, 0 6" fill="#5a5a60"/>
+            </marker>
+          </defs>
+          <!-- DP -->
+          <text x="80" y="16" fill="#7c9cbf" font-size="11" text-anchor="middle" font-weight="500">DP</text>
+          <circle cx="80" cy="35" r="10" fill="#111118" stroke="#7c9cbf" stroke-width="1.5"/>
+          <text x="80" y="39" fill="#7c9cbf" font-size="9" text-anchor="middle">s</text>
+          <line x1="60" y1="55" x2="75" y2="45" stroke="#3a3835" stroke-width="1.2" marker-end="url(#ad)"/>
+          <line x1="80" y1="55" x2="80" y2="45" stroke="#3a3835" stroke-width="1.2" marker-end="url(#ad)"/>
+          <line x1="100" y1="55" x2="85" y2="45" stroke="#3a3835" stroke-width="1.2" marker-end="url(#ad)"/>
+          <circle cx="60" cy="65" r="7" fill="#16161a" stroke="#3a3835"/>
+          <circle cx="80" cy="65" r="7" fill="#16161a" stroke="#3a3835"/>
+          <circle cx="100" cy="65" r="7" fill="#16161a" stroke="#3a3835"/>
+          <text x="80" y="100" fill="#5a5a60" font-size="9" text-anchor="middle">all successors</text>
+          <!-- TD -->
+          <text x="240" y="16" fill="#9cb87c" font-size="11" text-anchor="middle" font-weight="500">TD(0)</text>
+          <circle cx="240" cy="35" r="10" fill="#111118" stroke="#9cb87c" stroke-width="1.5"/>
+          <text x="240" y="39" fill="#9cb87c" font-size="9" text-anchor="middle">s</text>
+          <line x1="240" y1="45" x2="240" y2="58" stroke="#3a3835" stroke-width="1.2" marker-end="url(#ad)"/>
+          <circle cx="240" cy="68" r="7" fill="#16161a" stroke="#3a3835"/>
+          <text x="240" y="100" fill="#5a5a60" font-size="9" text-anchor="middle">one sample step</text>
+          <!-- MC -->
+          <text x="400" y="16" fill="#e8d5a3" font-size="11" text-anchor="middle" font-weight="500">MC</text>
+          <circle cx="400" cy="35" r="10" fill="#111118" stroke="#e8d5a3" stroke-width="1.5"/>
+          <text x="400" y="39" fill="#e8d5a3" font-size="9" text-anchor="middle">s</text>
+          <line x1="400" y1="45" x2="400" y2="58" stroke="#3a3835" stroke-width="1.2"/>
+          <circle cx="400" cy="65" r="5" fill="#2a2a28" stroke="#3a3835"/>
+          <line x1="400" y1="70" x2="400" y2="80" stroke="#3a3835" stroke-width="1.2"/>
+          <circle cx="400" cy="87" r="5" fill="#2a2a28" stroke="#3a3835"/>
+          <line x1="400" y1="92" x2="400" y2="102" stroke="#3a3835" stroke-width="1" stroke-dasharray="2 2"/>
+          <text x="400" y="118" fill="#5a5a60" font-size="9" text-anchor="middle">until terminal</text>
+        </svg>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 6 · Q2</div>
+        <p>Which are true?<br>
+        (a) DP uses full backups and bootstrapping.<br>
+        (b) TD uses sample backups and bootstrapping.<br>
+        (c) MC uses sample backups and bootstrapping.<br>
+        (d) MC uses full backups and no bootstrapping.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (a), (b)</div>
+          <p>DP sweeps all transitions (full backup) and uses value estimates (bootstrapping). TD uses single sampled transitions and bootstraps. MC waits for the full return — no bootstrapping (c false, d partially wrong because MC uses sample backups, not full).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section class="section" id="control">
+      <div class="section-number">Section 03</div>
+      <h2>On-Policy vs Off-Policy Control</h2>
+
+      <h3>SARSA — On-Policy TD Control</h3>
+      <p>SARSA evaluates and improves the <em>same</em> policy generating behavior. Named after the quintuple $(S_t, A_t, R_{t+1}, S_{t+1}, A_{t+1})$:</p>
+
+      <div class="math-block">
+        <div class="math-label">SARSA Update</div>
+        $$Q(S_t, A_t) \;\leftarrow\; Q(S_t, A_t) + \alpha \left[ R_{t+1} + \gamma Q(S_{t+1}, A_{t+1}) - Q(S_t, A_t) \right]$$
+      </div>
+
+      <p>The critical detail: $A_{t+1}$ is the <strong>action actually taken</strong> by the policy in the next state — hence on-policy.</p>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 6 · Q4</div>
+        <p>Assertion: SARSA is an on-policy method.<br>
+        Reason: In SARSA, we do <em>not</em> update using the action that was actually taken.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (c) — Assertion true, Reason false</div>
+          <p>SARSA IS on-policy (assertion correct). The reason is wrong: SARSA updates using $A_{t+1}$, which IS the action actually taken — that's the exact definition of on-policy.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 6 · Q10</div>
+        <p>Which are true for SARSA?<br>
+        (a) It uses bootstrapping. (b) Off-policy. (c) On-policy. (d) Selects actions greedily.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (a), (c)</div>
+          <p>SARSA is a TD method (bootstraps ✓). It's on-policy ✓. It uses ε-greedy, not purely greedy, to ensure exploration.</p>
+        </div>
+      </div>
+
+      <h3>Q-Learning — Off-Policy TD Control</h3>
+      <p>Q-learning learns the <em>optimal</em> policy independently of the behavior policy. It always updates using the <strong>best possible next action</strong> regardless of what was actually taken:</p>
+
+      <div class="math-block">
+        <div class="math-label">Q-Learning Update</div>
+        $$Q(S_t, A_t) \;\leftarrow\; Q(S_t, A_t) + \alpha \left[ R_{t+1} + \gamma \max_{a'} Q(S_{t+1}, a') - Q(S_t, A_t) \right]$$
+      </div>
+
+      <div class="callout">
+        💡 The $\max$ operation is what makes Q-learning off-policy. Even while following an ε-greedy behavior policy, it evaluates the <em>greedy target policy</em>.
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 6 · Q5</div>
+        <p>Assertion: Q-learning can use asynchronous samples from different policies to update Q values.<br>
+        Reason: Q-learning is an off-policy algorithm.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (a) — Both true, Reason correctly explains Assertion</div>
+          <p>Because Q-learning uses the greedy max rather than the actual next action, it's off-policy. This allows it to learn from samples generated by any sufficiently exploratory policy.</p>
+        </div>
+      </div>
+
+      <h3>SARSA vs Q-Learning: Cliff World</h3>
+      <p>In cliff walking (falling off = −100 reward), with ε-greedy behavior:</p>
+
+      <!-- Cliff diagram -->
+      <div class="diagram-wrap">
+        <svg width="460" height="150" viewBox="0 0 460 150">
+          <!-- Grid ground -->
+          <rect x="20" y="60" width="420" height="60" rx="4" fill="#0f0f12" stroke="#222228"/>
+          <!-- Cliff -->
+          <rect x="70" y="60" width="320" height="60" rx="0" fill="#1a0f0f" stroke="none"/>
+          <text x="230" y="95" fill="#5a2020" font-size="11" text-anchor="middle">C L I F F  (-100)</text>
+          <!-- Start -->
+          <rect x="20" y="60" width="50" height="60" rx="0" fill="#111118" stroke="#2a2a38"/>
+          <text x="45" y="95" fill="#7c9cbf" font-size="10" text-anchor="middle">START</text>
+          <!-- End -->
+          <rect x="390" y="60" width="50" height="60" rx="0" fill="#111118" stroke="#2a2a38"/>
+          <text x="415" y="95" fill="#9cb87c" font-size="10" text-anchor="middle">GOAL</text>
+          <!-- Q-learning path (optimal, risky) -->
+          <path d="M 70 88 L 390 88" stroke="#e8d5a3" stroke-width="2" stroke-dasharray="6 3"/>
+          <text x="230" y="78" fill="#e8d5a3" font-size="9" text-anchor="middle">Q-Learning: optimal (risky edge path)</text>
+          <!-- SARSA path (safe) -->
+          <path d="M 45 58 Q 100 10 230 20 Q 350 10 415 58" stroke="#7c9cbf" stroke-width="2" stroke-dasharray="6 3" fill="none"/>
+          <text x="230" y="15" fill="#7c9cbf" font-size="9" text-anchor="middle">SARSA: safer path (above cliff)</text>
+        </svg>
+      </div>
+
+      <table>
+        <thead>
+          <tr><th>Algorithm</th><th>Path Found</th><th>Why</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Q-Learning</td>
+            <td>Optimal (risky, cliff edge)</td>
+            <td>Evaluates greedy policy — ignores ε-exploration risk</td>
+          </tr>
+          <tr>
+            <td>SARSA</td>
+            <td>Safer (away from cliff)</td>
+            <td>Evaluates the ε-greedy policy itself — accounts for random exploration falls</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="question">
+        <div class="question-title">Assignment 6 · Q7</div>
+        <p>In cliff walking with ε-greedy, which finds the optimal path and which finds the safer path?</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (a) — Q-learning: optimal; SARSA: safer</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section class="section" id="is">
+      <div class="section-number">Section 04</div>
+      <h2>Off-Policy MC &amp; Importance Sampling</h2>
+
+      <p>When evaluating a <em>target policy</em> $\pi$ using trajectories generated by a <em>behavior policy</em> $q$ (or $\mu$), we must correct for the distribution mismatch using <strong>Importance Sampling</strong>.</p>
+
+      <div class="math-block">
+        <div class="math-label">Weighted Importance Sampling Estimator</div>
+        $$V(s) \;\approx\; \frac{\sum_{i=1}^N f(x_i)\,\frac{\pi(x_i)}{q(x_i)}}{\sum_{i=1}^N \frac{\pi(x_i)}{q(x_i)}}$$
+      </div>
+
+      <p>Here $f(x_i)$ is the return on trajectory $x_i$, $\pi(x_i)$ is the trajectory probability under the <em>target</em> policy, $q(x_i)$ under the <em>behavior</em> policy.</p>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 6 · Q3</div>
+        <p>In the weighted IS formula, $p$ is _____ and $q$ is _____.<br>
+        (a) $p$ is estimation (target) policy, $q$ is behaviour policy.<br>
+        (b) $p$ is behaviour policy, $q$ is estimation policy.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (a)</div>
+          <p>The IS weight ratio is always $\frac{\text{target}}{\text{behavior}}$. We're upweighting trajectories the target policy would prefer and downweighting those it wouldn't.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 6 · Q1</div>
+        <p>Assertion: Off-policy MC importance sampling requires knowledge of MDP transition probabilities.<br>
+        Reason: Both policies' trajectory probabilities depend on transition probabilities.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (d) — Both Assertion and Reason are false</div>
+          <p>The transition probabilities $P(s' \mid s,a)$ appear in both numerator and denominator of the IS ratio — they <em>cancel out perfectly</em>. We only need the policies' action probabilities, not the environment model.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5 -->
+    <section class="section" id="planning">
+      <div class="section-number">Section 05</div>
+      <h2>Planning vs Learning</h2>
+
+      <table>
+        <thead>
+          <tr><th>Concept</th><th>Source of Updates</th><th>Model Required?</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Learning</td>
+            <td>Real-world interactions (sample experience)</td>
+            <td>No — model-free</td>
+          </tr>
+          <tr>
+            <td>Planning</td>
+            <td>Simulated model of the MDP</td>
+            <td>Yes — at least a simulation model</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 6 · Q5</div>
+        <p>Which are true?<br>
+        (a) Learning requires at least a simulation model.<br>
+        (b) Planning requires at least a simulation model.<br>
+        (c) Learning can be done just using real-world samples.<br>
+        (d) Planning can be done just using real-world samples.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (b), (c)</div>
+          <p>Learning is model-free and works from real experience (c). Planning, by definition, needs a model to simulate transitions (b).</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 6 · Q8</div>
+        <p>Primary advantage of a simulated model over real-world experience?</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (c) — Safe exploration of risky states</div>
+          <p>A simulator lets the agent try catastrophic actions (cliff falls, crashes) without real-world consequences — invaluable for robotics, safety-critical systems.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 6 · Q3</div>
+        <p>Key characteristic of UC-Trees algorithm?</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (c) — Balances exploration and exploitation via confidence bounds</div>
+          <p>UCT (Upper Confidence Trees) applies UCB formulas to Monte Carlo Tree Search, mathematically balancing known-good actions with uncertain ones.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 6 · Q6</div>
+        <p>What is an <em>after-state</em> in RL?</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (b) — State immediately after action, before environment's transition</div>
+          <p>In deterministic games (e.g., tic-tac-toe), the state after your move is deterministic even if the opponent's response isn't. Evaluating after-states is more efficient since multiple state-action pairs can lead to the same after-state.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="page-nav">
+      <a class="nav-btn" href="week5.html">← Week 5</a>
+      <a class="nav-btn" href="week7.html">Week 7 →</a>
+    </div>
+  </main>
 </div>
-
-<div class="question">
-<strong>Assignment 6 Q4</strong><br>
-Solution: (b)
-</div>
-
-<div class="question">
-<strong>Practice Assignment 6 Q2</strong><br>
-Solution: (c)
-</div>
-
-<h3>Comparison</h3>
-<ul>
-<li>DP: full backup + model</li>
-<li>TD: sample backup + bootstrap</li>
-<li>MC: sample backup + no bootstrap</li>
-</ul>
-
-<div class="question">
-<strong>Assignment 6 Q2</strong><br>
-Solution: (a), (b)
-</div>
-
-<h3>Numerical Example</h3>
-<p>Final values: V(A) = 4, V(B) = 12</p>
-
-</div>
-
-<div class="section">
-<h2>2. On-Policy vs Off-Policy</h2>
-
-<h3>SARSA</h3>
-<code>Q ← Q + α[R + γQ(next action) - Q]</code>
-
-<div class="question">
-<strong>Practice Assignment 6 Q4</strong><br>
-Solution: (c)
-</div>
-
-<div class="question">
-<strong>Assignment 6 Q10</strong><br>
-Solution: (a), (c)
-</div>
-
-<h3>Q-Learning</h3>
-<code>Q ← Q + α[R + γ max Q(next) - Q]</code>
-
-<div class="question">
-<strong>Assignment 6 Q5</strong><br>
-Solution: (a)
-</div>
-
-<h3>Cliff World Insight</h3>
-<ul>
-<li>Q-learning → optimal but risky path</li>
-<li>SARSA → safer path</li>
-</ul>
-
-<div class="question">
-<strong>Assignment 6 Q7</strong><br>
-Solution: (a)
-</div>
-
-</div>
-
-<div class="section">
-<h2>3. Importance Sampling</h2>
-
-<code>V(s) ≈ Σ f(x) (π/q) / Σ (π/q)</code>
-
-<div class="question">
-<strong>Practice Assignment 6 Q3</strong><br>
-Solution: (a)
-</div>
-
-<div class="question">
-<strong>Assignment 6 Q1</strong><br>
-Solution: (d)
-</div>
-
-</div>
-
-<div class="section">
-<h2>4. Planning vs Learning</h2>
-
-<ul>
-<li>Learning → real experience</li>
-<li>Planning → simulation model</li>
-</ul>
-
-<div class="question">
-<strong>Practice Assignment 6 Q5</strong><br>
-Solution: (b), (c)
-</div>
-
-<div class="question">
-<strong>Assignment 6 Q8</strong><br>
-Solution: (c)
-</div>
-
-<div class="question">
-<strong>Assignment 6 Q3</strong><br>
-Solution: (c)
-</div>
-
-<div class="question">
-<strong>Assignment 6 Q6</strong><br>
-Solution: (b)
-</div>
-
-</div>
-
 </body>
 </html>

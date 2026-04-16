@@ -3,250 +3,820 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Week 5 - Reinforcement Learning</title>
+<title>Week 5 — Value & Policy Iteration</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['$','$'],['\\(','\\)']] },
+    options: { skipHtmlTags: ['script','noscript','style','textarea'] }
+  };
+</script>
 <style>
-body {
-    margin: 0;
-    padding: 40px;
-    background-color: #000;
-    color: #fff;
-    font-family: "Segoe UI", Arial, sans-serif;
-    line-height: 1.7;
-}
+  :root {
+    --bg: #0c0c0e;
+    --surface: #111114;
+    --surface2: #16161a;
+    --border: #222228;
+    --border2: #2a2a30;
+    --accent: #e8d5a3;
+    --accent2: #7c9cbf;
+    --accent3: #9cb87c;
+    --text: #e8e6e0;
+    --muted: #7a7870;
+    --dim: #3a3835;
+    --q-bg: #0f0f13;
+    --q-border: #2a2a38;
+  }
 
-h1 {
-    font-size: 36px;
-    border-bottom: 2px solid #fff;
-    padding-bottom: 10px;
-}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-h2 {
-    margin-top: 40px;
-    border-left: 4px solid #fff;
-    padding-left: 10px;
-}
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.75;
+    font-size: 15px;
+    font-weight: 300;
+  }
 
-h3 {
-    margin-top: 25px;
-    color: #ccc;
-}
+  .layout { display: flex; min-height: 100vh; }
 
-p {
-    margin: 10px 0;
-}
+  /* SIDEBAR */
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
 
-code {
+  .sidebar-header {
+    padding: 28px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    text-decoration: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    transition: color 0.15s;
+    margin-bottom: 16px;
+  }
+
+  .back-link:hover { color: var(--accent); }
+
+  .sidebar-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 17px;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .sidebar-week {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .sidebar-nav {
+    flex: 1;
+    padding: 16px 12px;
+    overflow-y: auto;
+  }
+
+  .toc-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    padding: 0 8px;
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+
+  .toc-link {
     display: block;
-    background: #111;
-    padding: 12px;
-    margin: 10px 0;
-    border-left: 3px solid #fff;
+    color: #7a7870;
+    text-decoration: none;
+    padding: 7px 10px;
+    border-radius: 5px;
+    font-size: 12.5px;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+  }
+
+  .toc-link:hover {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: rgba(232,213,163,0.05);
+  }
+
+  /* MAIN */
+  .main {
+    flex: 1;
+    max-width: 820px;
+    padding: 56px 48px 80px;
+  }
+
+  .page-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent2);
+    margin-bottom: 12px;
+  }
+
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 42px;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  .page-intro {
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 560px;
+    line-height: 1.8;
+    margin-bottom: 56px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* SECTIONS */
+  .section {
+    margin-bottom: 64px;
+    scroll-margin-top: 32px;
+  }
+
+  .section-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h3 {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--accent);
+    margin: 28px 0 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  p { margin: 10px 0; color: #c0bdb5; }
+
+  /* MATH BLOCKS */
+  .math-block {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin: 16px 0;
     overflow-x: auto;
-}
+    font-size: 15px;
+  }
 
-.section {
-    margin-bottom: 40px;
-}
+  .math-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
 
-.question {
-    margin-top: 15px;
-    padding: 15px;
-    background: #111;
-    border-left: 4px solid #fff;
-}
+  /* CODE */
+  .code-block {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    background: #0a0a0d;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    overflow-x: auto;
+    color: #a8c4d8;
+    line-height: 1.7;
+  }
 
-ul {
-    margin-left: 20px;
-}
+  /* BULLET LISTS */
+  ul {
+    list-style: none;
+    margin: 12px 0;
+    padding: 0;
+  }
 
+  ul li {
+    padding: 4px 0 4px 20px;
+    position: relative;
+    color: #c0bdb5;
+    font-size: 14.5px;
+  }
+
+  ul li::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--dim);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* QUESTION BLOCKS */
+  .question {
+    background: var(--q-bg);
+    border: 1px solid var(--q-border);
+    border-radius: 8px;
+    padding: 20px 22px;
+    margin: 20px 0;
+    position: relative;
+  }
+
+  .question::before {
+    content: 'Q';
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: var(--accent);
+    color: #0c0c0e;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+  }
+
+  .question-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    margin-top: 2px;
+  }
+
+  .question p {
+    font-size: 13.5px;
+    color: #a8a6a0;
+    margin: 6px 0;
+  }
+
+  .answer {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border2);
+  }
+
+  .answer-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+
+  .answer p {
+    font-size: 13px;
+    color: #9a9890;
+    line-height: 1.7;
+  }
+
+  .answer-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+
+  /* TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13.5px;
+  }
+
+  th {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border2);
+    text-align: left;
+  }
+
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: #b8b6b0;
+    vertical-align: top;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.015); }
+
+  /* CALLOUT */
+  .callout {
+    background: rgba(124,156,191,0.06);
+    border: 1px solid rgba(124,156,191,0.15);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 13.5px;
+    color: #a0b8cc;
+  }
+
+  /* DIAGRAM */
+  .diagram-wrap {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 28px;
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    overflow-x: auto;
+  }
+
+  svg text { font-family: 'DM Mono', monospace; }
+
+  /* NAV FOOTER */
+  .page-nav {
+    margin-top: 64px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    padding: 10px 16px;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  .nav-btn:hover {
+    color: var(--accent);
+    border-color: rgba(232,213,163,0.3);
+    background: rgba(232,213,163,0.04);
+  }
 </style>
 </head>
-
 <body>
-<a href="index.html" style="
-    color:white;
-    text-decoration:none;
-    border:1px solid white;
-    padding:8px 15px;
-    display:inline-block;
-    margin-bottom:20px;
-">
-← Back
-</a>
-<h1>Reinforcement Learning Examination Notes</h1>
+<div class="layout">
 
-<p>These notes cover core algorithms for finding optimal policies and value functions in MDPs: Value Iteration, Policy Iteration, Asynchronous DP, and Monte Carlo methods.</p>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <a class="back-link" href="index.html">← Back to Portal</a>
+      <div class="sidebar-week">Week 5</div>
+      <div class="sidebar-title">Value &amp; Policy Iteration</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="toc-label">Contents</div>
+      <a class="toc-link" href="#vi">1. Value Iteration</a>
+      <a class="toc-link" href="#pi">2. Policy Iteration</a>
+      <a class="toc-link" href="#dp">3. DP Variants &amp; GPI</a>
+      <a class="toc-link" href="#mc">4. Monte Carlo Methods</a>
+    </nav>
+  </aside>
 
-<div class="section">
-<h2>1. Value Iteration and Contraction Mappings</h2>
+  <main class="main">
+    <div class="page-eyebrow">Week 5 · Examination Notes</div>
+    <h1 class="page-title">Value &amp; Policy Iteration</h1>
+    <p class="page-intro">Core algorithms for finding optimal policies and value functions in MDPs: Value Iteration, Policy Iteration, Asynchronous DP, and Monte Carlo methods.</p>
 
-<p>Value iteration involves successively updating an estimated value function v until it converges to the optimal value function v*.</p>
+    <!-- SECTION 1 -->
+    <section class="section" id="vi">
+      <div class="section-number">Section 01</div>
+      <h2>Value Iteration &amp; Contraction Mappings</h2>
 
-<h3>The Bellman Optimality Operator (L)</h3>
+      <p>Value iteration successively applies the Bellman optimality operator to an estimated value function $v$ until it converges to the unique optimal value function $v^*$. This works because the operator is a <em>contraction mapping</em> on a Banach space.</p>
 
-<code>
-(Lv)(s) = max_{a ∈ A} [ R(s,a) + γ Σ P(s' | s,a) v(s') ]
-</code>
+      <h3>The Bellman Optimality Operator</h3>
+      <p>We define operator $L$ applied to a value function $v$ as:</p>
 
-<p>The space of all bounded value functions forms a complete Banach space under the max norm.</p>
+      <div class="math-block">
+        <div class="math-label">Bellman Optimality Operator</div>
+        $$(Lv)(s) = \max_{a \in A} \left[ R(s,a) + \gamma \sum_{s'} P(s' \mid s,a)\, v(s') \right]$$
+      </div>
 
-<ul>
-<li>L is a contraction mapping with factor γ &lt; 1</li>
-<li>L has a unique fixed point v*</li>
-<li>L is non-linear due to the max operation</li>
-</ul>
+      <p>The space of all bounded value functions forms a <strong>complete Banach space</strong> under the max norm. Key properties of $L$:</p>
 
-<h3>Mathematical Bounds</h3>
+      <ul>
+        <li>$L$ is a <strong>contraction mapping</strong> with factor $\gamma < 1$</li>
+        <li>By the Banach Fixed Point Theorem, $L$ has a <strong>unique fixed point</strong> $v^*$</li>
+        <li>$L$ is <strong>non-linear</strong> due to the $\max$ operation</li>
+      </ul>
 
-<code>||Lv - Lu|| ≤ γ ||v - u||</code>
-<code>|Lv(s) - Lu(s)| ≤ γ ||v - u||</code>
+      <h3>Contraction Bounds</h3>
 
-<div class="question">
-<strong>Practice Question (Assignment 5, Q9)</strong><br>
-Q: Given that L is a contraction in Banach space, which of the following is true?<br>
-(a) A contraction mapping does not have a unique fixed point.<br>
-(b) A contraction mapping may be non-linear.<br>
-(c) ||Lv - Lu|| ≤ γ ||v - u||<br>
-(d) ∀ s, |Lv(s) - Lu(s)| ≤ γ ||v - u||<br><br>
+      <div class="math-block">
+        <div class="math-label">Global Norm Contraction</div>
+        $$\| Lv - Lu \| \;\leq\; \gamma\, \| v - u \|$$
+      </div>
+      <div class="math-block">
+        <div class="math-label">State-wise Bound</div>
+        $$\forall s,\quad |Lv(s) - Lu(s)| \;\leq\; \gamma\, \| v - u \|$$
+      </div>
 
-Solution: (b), (c), (d)
+      <div class="callout">
+        💡 Because $\gamma < 1$, repeated application of $L$ <em>strictly shrinks</em> the distance between any two value functions — guaranteeing convergence to the unique $v^*$.
+      </div>
+
+      <!-- Diagram: VI convergence -->
+      <div class="diagram-wrap">
+        <svg width="520" height="110" viewBox="0 0 520 110">
+          <defs>
+            <marker id="arr" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+              <polygon points="0 0, 7 3.5, 0 7" fill="#5a5a60"/>
+            </marker>
+          </defs>
+          <!-- nodes -->
+          <rect x="10" y="35" width="70" height="36" rx="5" fill="#16161a" stroke="#2a2a38"/>
+          <text x="45" y="57" fill="#9a9890" font-size="12" text-anchor="middle">v⁰</text>
+
+          <rect x="120" y="35" width="70" height="36" rx="5" fill="#16161a" stroke="#2a2a38"/>
+          <text x="155" y="57" fill="#9a9890" font-size="12" text-anchor="middle">v¹ = Lv⁰</text>
+
+          <rect x="230" y="35" width="70" height="36" rx="5" fill="#16161a" stroke="#2a2a38"/>
+          <text x="265" y="57" fill="#9a9890" font-size="12" text-anchor="middle">v² = Lv¹</text>
+
+          <text x="340" y="57" fill="#3a3835" font-size="20" text-anchor="middle">···</text>
+
+          <rect x="380" y="35" width="70" height="36" rx="5" fill="#1a1a10" stroke="#3a3820"/>
+          <text x="415" y="57" fill="#e8d5a3" font-size="12" text-anchor="middle">v* = Lv*</text>
+
+          <line x1="80" y1="53" x2="118" y2="53" stroke="#3a3835" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="190" y1="53" x2="228" y2="53" stroke="#3a3835" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="300" y1="53" x2="338" y2="53" stroke="#3a3835" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="352" y1="53" x2="378" y2="53" stroke="#3a3835" stroke-width="1.5" marker-end="url(#arr)"/>
+
+          <!-- labels -->
+          <text x="99" y="46" fill="#5a5a60" font-size="9" text-anchor="middle">L</text>
+          <text x="209" y="46" fill="#5a5a60" font-size="9" text-anchor="middle">L</text>
+          <text x="319" y="46" fill="#5a5a60" font-size="9" text-anchor="middle">L</text>
+
+          <text x="260" y="100" fill="#5a5a60" font-size="10" text-anchor="middle">γ-contraction shrinks distance at each step</text>
+        </svg>
+      </div>
+
+      <h3>Stopping Criterion</h3>
+      <p>We stop when the maximum change between successive iterations is small enough:</p>
+
+      <div class="math-block">
+        <div class="math-label">Stopping Condition</div>
+        $$\| v^{n+1} - v^n \| < \frac{\epsilon(1 - \gamma)}{2\gamma}$$
+      </div>
+
+      <p>This stopping condition <strong>guarantees</strong>:</p>
+      <ul>
+        <li>$\| v^{n+1} - v^* \| \leq \epsilon/2$  (value function is close to optimal)</li>
+        <li>$\| v^\pi - v^* \| \leq \epsilon$  (greedy policy derived from $v^{n+1}$ is near-optimal)</li>
+      </ul>
+
+      <div class="question">
+        <div class="question-title">Assignment 5 · Q9</div>
+        <p>Given that $L$ is a contraction in Banach space, which are true?<br>
+        (a) A contraction mapping does not have a unique fixed point.<br>
+        (b) A contraction mapping may be non-linear.<br>
+        (c) $\|Lv - Lu\| \leq \gamma \|v - u\|$<br>
+        (d) $\forall s,\; |Lv(s) - Lu(s)| \leq \gamma \|v - u\|$</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (b), (c), (d)</div>
+          <p>A contraction on a Banach space <em>always</em> has a unique fixed point (so (a) is false). The Bellman operator involves $\max$, making it non-linear (b). The global contraction bound (c) mathematically implies the pointwise bound (d).</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 5 · Q10</div>
+        <p>Which are true about the Bellman optimality equation?<br>
+        (a) It defines a contraction in Banach space.<br>
+        (b) It can be rewritten as a linear transformation.<br>
+        (c) Final values at stopping condition are optimal ($v^*$).<br>
+        (d) Final greedy policy at stopping condition is optimal.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (a) only</div>
+          <p>The $\max$ operator makes it non-linear (b false). The stopping criterion only guarantees $\epsilon$-closeness to $v^*$, not exact optimality (c, d false).</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 5 · Q3</div>
+        <p>Which are guaranteed at the stopping criterion?<br>
+        (a) $\|v^{n+1} - v^*\| \leq \epsilon/2$<br>
+        (b) $\|v^\pi - v^*\| \leq \epsilon$</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ Both (a) and (b)</div>
+          <p>Setting the threshold to $\frac{\epsilon(1-\gamma)}{2\gamma}$ is precisely what produces these two guarantees.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section class="section" id="pi">
+      <div class="section-number">Section 02</div>
+      <h2>Policy Iteration</h2>
+
+      <p>Policy Iteration alternates between two steps: fully evaluating the current policy (<em>Policy Evaluation</em>) and greedily improving it (<em>Policy Improvement</em>). It converges to the exact optimal policy for finite MDPs.</p>
+
+      <!-- Diagram: PI loop -->
+      <div class="diagram-wrap">
+        <svg width="440" height="120" viewBox="0 0 440 120">
+          <defs>
+            <marker id="arr2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+              <polygon points="0 0, 7 3.5, 0 7" fill="#5a5a60"/>
+            </marker>
+          </defs>
+          <!-- Policy box -->
+          <rect x="20" y="40" width="140" height="44" rx="6" fill="#16161a" stroke="#2a2a38"/>
+          <text x="90" y="58" fill="#7c9cbf" font-size="11" text-anchor="middle" font-weight="500">Policy Evaluation</text>
+          <text x="90" y="74" fill="#5a5a60" font-size="9" text-anchor="middle">Solve Lπv = v</text>
+          <!-- Value box -->
+          <rect x="280" y="40" width="140" height="44" rx="6" fill="#16161a" stroke="#2a2a38"/>
+          <text x="350" y="58" fill="#9cb87c" font-size="11" text-anchor="middle" font-weight="500">Policy Improvement</text>
+          <text x="350" y="74" fill="#5a5a60" font-size="9" text-anchor="middle">π' = greedy(v)</text>
+          <!-- arrows -->
+          <path d="M 160 55 Q 220 20 280 55" stroke="#3a3835" stroke-width="1.5" fill="none" marker-end="url(#arr2)"/>
+          <path d="M 280 70 Q 220 105 160 70" stroke="#3a3835" stroke-width="1.5" fill="none" marker-end="url(#arr2)"/>
+          <text x="220" y="16" fill="#5a5a60" font-size="9" text-anchor="middle">v^π (value fn.)</text>
+          <text x="220" y="112" fill="#5a5a60" font-size="9" text-anchor="middle">π (new policy)</text>
+        </svg>
+      </div>
+
+      <h3>Step 1 — Policy Evaluation (PE)</h3>
+      <p>Compute the value function $v^{\pi_n}$ for current policy $\pi_n$. This is the unique fixed point of the policy Bellman operator $L_\pi$:</p>
+
+      <div class="math-block">
+        <div class="math-label">Bellman Operator for Policy π</div>
+        $$(L_\pi v)(s) = \sum_{a} \pi(a \mid s)\left[ R(s,a) + \gamma \sum_{s'} P(s' \mid s,a)\, v(s') \right]$$
+      </div>
+
+      <p>PE solves for $v$ such that $L_\pi v = v$. Note that $L_\pi$ is a <strong>linear</strong> operator (no max), unlike $L$.</p>
+
+      <h3>Step 2 — Policy Improvement (PI)</h3>
+      <p>Extract a new, better policy by acting greedily with respect to $v^{\pi_n}$:</p>
+
+      <div class="math-block">
+        <div class="math-label">Greedy Policy Extraction</div>
+        $$\pi_{n+1}(s) = \arg\max_{a} \left[ R(s,a) + \gamma \sum_{s'} P(s' \mid s,a)\, v^{\pi_n}(s') \right]$$
+      </div>
+
+      <div class="callout">
+        💡 PE and PI interact monotonically: each PI step guarantees $v^{\pi_{n+1}} \geq v^{\pi_n}$ pointwise. Because there are finitely many deterministic policies, convergence to $v^*$ is guaranteed.
+      </div>
+
+      <div class="question">
+        <div class="question-title">Assignment 5 · Q1</div>
+        <p>Which are true of the PE and PI steps?<br>
+        (a) Values returned by PE may fluctuate between high and low values.<br>
+        (b) PE returns the fixed point of $L_{\pi_n}$.<br>
+        (c) PI can randomly select any greedy policy for ties.<br>
+        (d) Policy iteration always converges for a finite MDP.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (b), (d)</div>
+          <p>PE values monotonically increase (a false). Ties must be broken consistently to guarantee convergence (c false). PE exactly solves for the fixed point (b true), and finite MDPs have finite deterministic policies so convergence is guaranteed (d true).</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 5 · Q1</div>
+        <p>After policy iteration converges, which statement is true about $\pi_n$ and $v^{\pi_n}$?<br>
+        (a) $\pi_n$ optimal but $v^{\pi_n}$ might not be.<br>
+        (b) $v^{\pi_n}$ optimal but $\pi_n$ might not be.<br>
+        (c) Nothing can be said.<br>
+        (d) Both $\pi_n$ and $v^{\pi_n}$ are optimal.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (d)</div>
+          <p>When policy iteration's stopping criterion is met (policy stops changing), it has found the <em>exact</em> optimal policy and value function — unlike value iteration which only guarantees $\epsilon$-optimality.</p>
+        </div>
+      </div>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 5 · Q5</div>
+        <p>If $v$ satisfies $Lv = L_\pi v = v$, then:</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (c) — $\pi$ is an optimal policy and $v$ is its fixed point</div>
+          <p>$L_\pi v = v$ means $v = v^\pi$. $Lv = v$ means $v = v^*$. Together, $v^\pi = v^*$, so $\pi$ must be optimal.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3 -->
+    <section class="section" id="dp">
+      <div class="section-number">Section 03</div>
+      <h2>DP Variants &amp; Generalized Policy Iteration</h2>
+
+      <p>Classic DP requires sweeping the <em>entire</em> state space and knowing the full environment model $P(s' \mid s, a)$. Variants reduce computational cost while retaining convergence guarantees.</p>
+
+      <h3>Asynchronous DP</h3>
+      <ul>
+        <li>Updates states in <strong>any order</strong>, in place (single value array)</li>
+        <li>Converges as long as every state is updated <strong>infinitely often</strong></li>
+        <li>Avoids expensive full sweeps on large state spaces</li>
+      </ul>
+
+      <h3>Real-Time DP (RTDP)</h3>
+      <ul>
+        <li>Focuses updates along <strong>sampled trajectories</strong></li>
+        <li>Saves computation on rarely-visited states</li>
+        <li>Particularly useful in goal-directed tasks</li>
+      </ul>
+
+      <h3>Generalized Policy Iteration (GPI)</h3>
+      <p>GPI is the unifying framework behind all DP and RL methods: policy evaluation and policy improvement interact <em>continuously</em>, without waiting for either to fully complete.</p>
+
+      <!-- GPI diagram -->
+      <div class="diagram-wrap">
+        <svg width="380" height="100" viewBox="0 0 380 100">
+          <defs>
+            <marker id="arr3" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <polygon points="0 0, 6 3, 0 6" fill="#5a5a60"/>
+            </marker>
+          </defs>
+          <ellipse cx="100" cy="50" rx="80" ry="32" fill="#111118" stroke="#2a2a38"/>
+          <text x="100" y="46" fill="#7c9cbf" font-size="11" text-anchor="middle">Evaluation</text>
+          <text x="100" y="62" fill="#5a5a60" font-size="9" text-anchor="middle">v → v^π</text>
+
+          <ellipse cx="280" cy="50" rx="80" ry="32" fill="#111118" stroke="#2a2a38"/>
+          <text x="280" y="46" fill="#9cb87c" font-size="11" text-anchor="middle">Improvement</text>
+          <text x="280" y="62" fill="#5a5a60" font-size="9" text-anchor="middle">π → greedy(v)</text>
+
+          <path d="M 178 38 Q 190 18 202 38" stroke="#3a3835" stroke-width="1.5" fill="none" marker-end="url(#arr3)"/>
+          <path d="M 202 62 Q 190 82 178 62" stroke="#3a3835" stroke-width="1.5" fill="none" marker-end="url(#arr3)"/>
+
+          <text x="190" y="14" fill="#5a5a60" font-size="8" text-anchor="middle">partial ok</text>
+          <text x="190" y="95" fill="#e8d5a3" font-size="8" text-anchor="middle">converges when π greedy w.r.t. v^π</text>
+        </svg>
+      </div>
+
+      <ul>
+        <li>No need to wait for full evaluation before improving</li>
+        <li>Before convergence, PE will cause the policy to no longer be greedy</li>
+        <li>System stabilises when $\pi$ is greedy w.r.t. its own evaluated value function</li>
+      </ul>
+    </section>
+
+    <!-- SECTION 4 -->
+    <section class="section" id="mc">
+      <div class="section-number">Section 04</div>
+      <h2>Monte Carlo Methods</h2>
+
+      <p>When the transition model is unknown, DP fails. Monte Carlo methods learn value functions directly from <strong>complete episodes</strong> of experience, requiring no model at all.</p>
+
+      <ul>
+        <li>Updates are applied only <strong>at the end</strong> of each episode</li>
+        <li>Works with episodic tasks; learns from sample trajectories</li>
+        <li>Does <strong>not</strong> bootstrap (uses actual observed returns)</li>
+      </ul>
+
+      <div class="question">
+        <div class="question-title">Assignment 5 · Q2</div>
+        <p>You sample trajectory $S_1 \to S_5 \to S_4 \to S_6 \to \text{terminal}$. Which states can be updated?</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">All states: S₁, S₄, S₅, S₆</div>
+          <p>All states appearing in the trajectory can be updated at episode end using their accumulated returns.</p>
+        </div>
+      </div>
+
+      <h3>First-Visit vs Every-Visit MC</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Which visits counted?</th>
+            <th>Bias</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>First-Visit MC</td>
+            <td>Only the <em>first</em> occurrence per episode</td>
+            <td>Unbiased</td>
+          </tr>
+          <tr>
+            <td>Every-Visit MC</td>
+            <td>All occurrences per episode</td>
+            <td>Slightly biased (short-term), asymptotically consistent</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Exploration Strategies</h3>
+      <ul>
+        <li><strong>Exploring Starts:</strong> Forces episodes to begin in random state–action pairs</li>
+        <li><strong>ε-greedy:</strong> Assigns small probability $\epsilon/|A|$ to all actions — ensures adequate exploration without deterministic starts</li>
+      </ul>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 5 · Q2</div>
+        <p>Assertion: MC policy evaluation must use exploring starts for non-deterministic policies.<br>
+        Reason: They must rely on exploring starts to ensure adequate sampling of all states.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (d) — Both Assertion and Reason are false</div>
+          <p>Non-deterministic policies inherently explore — their own randomness ensures all state–action pairs are eventually sampled with enough episodes. Exploring starts are not required.</p>
+        </div>
+      </div>
+
+      <h3>ε-Greedy Policy</h3>
+
+      <div class="math-block">
+        <div class="math-label">ε-Greedy Probabilities</div>
+        $$P(a^*) = 1 - \epsilon + \frac{\epsilon}{|A|} \qquad \text{(optimal action)}$$
+        $$P(a) = \frac{\epsilon}{|A|} \qquad \text{(all other actions)}$$
+      </div>
+
+      <div class="question">
+        <div class="question-title">Practice Assignment 5 · Q4</div>
+        <p>Assertion: Any ε-greedy policy w.r.t. $q_\pi$ is <em>strictly</em> better than $\pi$.<br>
+        Reason: Optimal action chosen with prob $1 - \epsilon + \epsilon/n$; others with $\epsilon/n$.</p>
+        <div class="answer">
+          <div class="answer-label">Solution</div>
+          <div class="answer-value">✓ (c) — Assertion false, Reason true</div>
+          <p>The assertion is false because the ε-greedy policy is <em>at least as good</em> as $\pi$ (equal if already at optimal ε-soft policy). The reason correctly states the ε-greedy probability formula.</p>
+        </div>
+      </div>
+
+      <h3>On-Policy vs Off-Policy</h3>
+      <table>
+        <thead>
+          <tr><th>Type</th><th>Behavior &amp; Target Policy</th><th>Technique Required</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>On-Policy</td>
+            <td>Same policy generates experience and is improved</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td>Off-Policy</td>
+            <td>Behavior policy $b$ generates data; target policy $\pi$ is learned</td>
+            <td>Importance Sampling</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <div class="page-nav">
+      <a class="nav-btn" href="week6.html">Week 6 →</a>
+    </div>
+
+  </main>
 </div>
-
-<div class="question">
-<strong>Practice Question (Assignment 5, Q10)</strong><br>
-Q: Which of the following are true?<br>
-(a) The Bellman optimality equation defines a contraction in Banach space.<br>
-(b) The Bellman optimality equation can be rewritten as a linear transformation.<br>
-(c) Final values from stopping condition are optimal.<br>
-(d) Final greedy policy is optimal.<br><br>
-
-Solution: (a)
-</div>
-
-<h3>Stopping Criteria</h3>
-
-<code>|| v(n+1) - v(n) || &lt; ε(1 - γ) / (2γ)</code>
-
-<p>Guarantees:</p>
-<ul>
-<li>|| v(n+1) - v* || ≤ ε/2</li>
-<li>|| v^π - v* || ≤ ε</li>
-</ul>
-
-<div class="question">
-<strong>Practice Question (Assignment 5, Q3)</strong><br>
-Solution: (a), (b)
-</div>
-
-</div>
-
-<div class="section">
-<h2>2. Policy Iteration</h2>
-
-<h3>Policy Evaluation</h3>
-
-<code>
-(Lπv)(s) = Σ π(a|s)[ R(s,a) + γ Σ P(s'|s,a)v(s') ]
-</code>
-
-<p>PE solves for v such that Lπv = v</p>
-
-<h3>Policy Improvement</h3>
-
-<code>
-π(s) = argmax_a [ R(s,a) + γ Σ P(s'|s,a)v(s') ]
-</code>
-
-<div class="question">
-<strong>Assignment 5, Q1</strong><br>
-Solution: (b), (d)
-</div>
-
-<div class="question">
-<strong>Practice Assignment 5, Q1</strong><br>
-Solution: (d)
-</div>
-
-<div class="question">
-<strong>Practice Assignment 5, Q5</strong><br>
-Solution: (c)
-</div>
-
-</div>
-
-<div class="section">
-<h2>3. Dynamic Programming (DP) Variants & GPI</h2>
-
-<p>Classic DP requires full model knowledge.</p>
-
-<h3>Asynchronous DP</h3>
-<p>Updates states in any order; converges if all states are updated.</p>
-
-<h3>RTDP</h3>
-<p>Focuses updates along sampled trajectories.</p>
-
-<h3>Generalized Policy Iteration (GPI)</h3>
-
-<ul>
-<li>Policy evaluation and improvement interact continuously</li>
-<li>No need to wait for full evaluation</li>
-<li>Converges when policy is greedy w.r.t its value</li>
-</ul>
-
-</div>
-
-<div class="section">
-<h2>4. Monte Carlo Methods</h2>
-
-<p>Used when transition model is unknown.</p>
-
-<ul>
-<li>Updates occur at end of episode</li>
-</ul>
-
-<div class="question">
-<strong>Assignment 5, Q2</strong><br>
-All states in trajectory can be updated.
-</div>
-
-<h3>First-Visit vs Every-Visit</h3>
-
-<ul>
-<li>First-Visit MC: only first occurrence</li>
-<li>Every-Visit MC: all occurrences</li>
-</ul>
-
-<h3>Exploration Strategies</h3>
-
-<ul>
-<li>Exploring starts</li>
-<li>ε-greedy policies</li>
-</ul>
-
-<div class="question">
-<strong>Practice Assignment 5, Q2</strong><br>
-Solution: (d)
-</div>
-
-<h3>ε-Greedy Policy</h3>
-
-<code>P(a*) = 1 - ε + ε/|A|</code>
-<code>P(a) = ε/|A|</code>
-
-<div class="question">
-<strong>Practice Assignment 5, Q4</strong><br>
-Solution: (c)
-</div>
-
-<h3>On-Policy vs Off-Policy</h3>
-
-<ul>
-<li>On-policy: same policy used</li>
-<li>Off-policy: different policies, requires importance sampling</li>
-</ul>
-
-</div>
-
 </body>
 </html>

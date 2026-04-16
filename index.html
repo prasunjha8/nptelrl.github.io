@@ -3,70 +3,353 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RL Notes Portal</title>
-
+<title>Reinforcement Learning Notes — Prof. Balaraman Ravindran</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <style>
-body {
-    margin: 0;
+  :root {
+    --bg: #0c0c0e;
+    --surface: #111114;
+    --border: #222228;
+    --accent: #e8d5a3;
+    --accent2: #7c9cbf;
+    --text: #e8e6e0;
+    --muted: #7a7870;
+    --dim: #3a3835;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  .layout {
     display: flex;
+    min-height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    position: sticky;
+    top: 0;
     height: 100vh;
-    font-family: "Segoe UI", Arial, sans-serif;
-    background: #000;
-    color: #fff;
-}
+  }
 
-/* Sidebar */
-.sidebar {
-    width: 250px;
-    background: #0a0a0a;
-    border-right: 1px solid #222;
-    padding: 20px;
-}
+  .sidebar-header {
+    padding: 32px 24px 24px;
+    border-bottom: 1px solid var(--border);
+  }
 
-.sidebar h2 {
-    margin-bottom: 20px;
-}
+  .sidebar-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
 
-.sidebar a {
-    display: block;
-    color: #ccc;
-    text-decoration: none;
-    padding: 10px;
-    margin: 5px 0;
-    border-radius: 5px;
-    transition: 0.2s;
-}
+  .sidebar-sub {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
 
-.sidebar a:hover {
-    background: #fff;
-    color: #000;
-}
-
-/* Content */
-.content {
+  .sidebar-nav {
     flex: 1;
-    padding: 40px;
-}
+    padding: 20px 16px;
+  }
 
-h1 {
-    border-bottom: 2px solid #fff;
-    padding-bottom: 10px;
-}
+  .nav-section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    padding: 0 8px;
+    margin-bottom: 8px;
+    margin-top: 20px;
+  }
+
+  .nav-section-label:first-child { margin-top: 0; }
+
+  .sidebar a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #9a9890;
+    text-decoration: none;
+    padding: 9px 12px;
+    border-radius: 6px;
+    font-size: 13.5px;
+    font-weight: 400;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+  }
+
+  .sidebar a:hover {
+    background: rgba(232,213,163,0.07);
+    color: var(--accent);
+    border-color: rgba(232,213,163,0.1);
+  }
+
+  .sidebar a.active {
+    background: rgba(232,213,163,0.1);
+    color: var(--accent);
+    border-color: rgba(232,213,163,0.15);
+  }
+
+  .sidebar a .week-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+    width: 32px;
+    flex-shrink: 0;
+  }
+
+  .sidebar a:hover .week-num { color: var(--muted); }
+
+  .sidebar-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    position: relative;
+  }
+
+  .hero {
+    max-width: 600px;
+    text-align: center;
+  }
+
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent2);
+    margin-bottom: 20px;
+  }
+
+  .hero-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(42px, 6vw, 72px);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: var(--text);
+    margin-bottom: 24px;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .hero-desc {
+    font-size: 15px;
+    color: var(--muted);
+    line-height: 1.8;
+    font-weight: 300;
+    margin-bottom: 48px;
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .week-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 0;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-decoration: none;
+    color: var(--text);
+    transition: all 0.2s ease;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+
+  .card:hover {
+    border-color: rgba(232,213,163,0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  .card:hover::before { transform: scaleX(1); }
+
+  .card-week {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: auto;
+  }
+
+  .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    background: rgba(255,255,255,0.05);
+    color: var(--muted);
+    padding: 3px 7px;
+    border-radius: 3px;
+    letter-spacing: 0.05em;
+  }
+
+  .decor {
+    position: absolute;
+    right: -60px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,213,163,0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
 </style>
 </head>
-
 <body>
+<div class="layout">
 
-<div class="sidebar">
-    <h2>RL Notes</h2>
-    <a href="week5.html">Week 5</a>
-    <a href="week6.html">Week 6</a>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">Reinforcement<br>Learning Notes</div>
+      <div class="sidebar-sub">RL · Prof. Balaraman Ravindran</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Weeks</div>
+      <a href="week5.html">
+        <span class="week-num">W5</span>
+        Value &amp; Policy Iteration
+      </a>
+      <a href="week6.html">
+        <span class="week-num">W6</span>
+        TD Learning &amp; Control
+      </a>
+      <a href="week7.html">
+        <span class="week-num">W7</span>
+        Eligibility Traces
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">Examination Prep Notes</div>
+  </aside>
+
+  <main class="main">
+    <div class="decor"></div>
+
+    <div class="hero">
+      <div class="hero-eyebrow">Examination Preparation</div>
+      <h1 class="hero-title">Nptel<br><em>My notes.</em></h1>
+      <p class="hero-desc">
+        Structured notes on Rl
+      </p>
+
+      <div class="week-cards">
+        <a class="card" href="week5.html">
+          <span class="card-week">Week 5</span>
+          <span class="card-title">Value Iteration &amp; Policy Iteration</span>
+          <div class="card-tags">
+            <span class="tag">Bellman</span>
+            <span class="tag">Contraction</span>
+            <span class="tag">Monte Carlo</span>
+          </div>
+        </a>
+        <a class="card" href="week6.html">
+          <span class="card-week">Week 6</span>
+          <span class="card-title">TD Learning, SARSA &amp; Q-Learning</span>
+          <div class="card-tags">
+            <span class="tag">TD(0)</span>
+            <span class="tag">SARSA</span>
+            <span class="tag">Off-Policy</span>
+          </div>
+        </a>
+        <a class="card" href="week7.html">
+          <span class="card-week">Week 7</span>
+          <span class="card-title">n-step Returns &amp; Eligibility Traces</span>
+          <div class="card-tags">
+            <span class="tag">TD(λ)</span>
+            <span class="tag">SARSA(λ)</span>
+            <span class="tag">Q(λ)</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </main>
+
 </div>
-
-<div class="content">
-    <h1>Welcome</h1>
-    <p>Select a week from the sidebar to view notes.</p>
-</div>
-
 </body>
 </html>

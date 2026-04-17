@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 11 — MAXQ &amp; Option Discovery</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script>MathJax={tex:{inlineMath:[["$","$"]],displayMath:[["$$","$$"]],processEscapes:true},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+<style>
+:root{--bg:#0c0c0e;--surface:#111114;--surface2:#16161a;--border:#222228;--border2:#2a2a30;--accent:#a8c4e0;--accent2:#9cb87c;--accent3:#f2cc8f;--text:#e8e6e0;--muted:#7a7870;--dim:#3a3835;--q-bg:#0f0f13;--q-border:#2a2a38;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.75;font-size:15px;font-weight:300;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;}
+.sidebar-header{padding:28px 20px 20px;border-bottom:1px solid var(--border);}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.05em;transition:color .15s;margin-bottom:16px;}
+.back-link:hover{color:var(--accent);}
+.sidebar-title{font-family:'DM Serif Display',serif;font-size:17px;color:var(--text);line-height:1.3;}
+.sidebar-week{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto;}
+.toc-label{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);padding:0 8px;margin-bottom:8px;margin-top:4px;}
+.toc-link{display:block;color:#7a7870;text-decoration:none;padding:7px 10px;border-radius:5px;font-size:12.5px;transition:all .15s;border-left:2px solid transparent;}
+.toc-link:hover{color:var(--accent);border-left-color:var(--accent);background:rgba(168,196,224,.05);}
+.main{flex:1;max-width:820px;padding:56px 48px 80px;}
+.page-eyebrow{font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:var(--accent);margin-bottom:12px;}
+.page-title{font-family:'DM Serif Display',serif;font-size:42px;line-height:1.1;letter-spacing:-.025em;color:var(--text);margin-bottom:16px;}
+.page-intro{font-size:15px;color:var(--muted);max-width:560px;line-height:1.8;margin-bottom:56px;padding-bottom:32px;border-bottom:1px solid var(--border);}
+.section{margin-bottom:64px;scroll-margin-top:32px;}
+.section-number{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+h2{font-family:'DM Serif Display',serif;font-size:28px;letter-spacing:-.02em;color:var(--text);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+h3{font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;color:var(--accent);margin:28px 0 10px;text-transform:uppercase;letter-spacing:.06em;}
+p{margin:10px 0;color:#c0bdb5;}
+.math-block{background:var(--surface2);border:1px solid var(--border2);border-left:3px solid var(--accent);border-radius:6px;padding:16px 20px;margin:16px 0;overflow-x:auto;font-size:15px;}
+.math-label{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;}
+ul{list-style:none;margin:12px 0;padding:0;}
+ul li{padding:4px 0 4px 20px;position:relative;color:#c0bdb5;font-size:14.5px;}
+ul li::before{content:'\2014';position:absolute;left:0;color:var(--dim);font-family:'DM Mono',monospace;}
+.question{background:var(--q-bg);border:1px solid var(--q-border);border-radius:8px;padding:20px 22px;margin:20px 0;position:relative;}
+.question::before{content:'Q';position:absolute;top:-10px;left:16px;background:var(--accent);color:#0c0c0e;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;padding:2px 8px;border-radius:3px;letter-spacing:.05em;}
+.question-title{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;margin-top:2px;}
+.question p{font-size:13.5px;color:#a8a6a0;margin:6px 0;}
+.answer{margin-top:14px;padding-top:12px;border-top:1px solid var(--border2);}
+.answer-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.answer p{font-size:13px;color:#9a9890;line-height:1.7;}
+.answer-value{font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);font-weight:500;margin-bottom:6px;}
+table{width:100%;border-collapse:collapse;margin:20px 0;font-size:13.5px;}
+th{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--border2);text-align:left;}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:#b8b6b0;vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.015);}
+.callout{background:rgba(168,196,224,.06);border:1px solid rgba(168,196,224,.15);border-radius:6px;padding:14px 18px;margin:16px 0;font-size:13.5px;color:#a8c0d8;}
+.callout-gold{background:rgba(242,204,143,.06);border:1px solid rgba(242,204,143,.15);border-radius:6px;padding:14px 18px;margin:16px 0;font-size:13.5px;color:#d4c090;}
+.callout-green{background:rgba(156,184,124,.06);border:1px solid rgba(156,184,124,.15);border-radius:6px;padding:14px 18px;margin:16px 0;font-size:13.5px;color:#a0c890;}
+.diagram-wrap{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:28px;margin:20px 0;display:flex;justify-content:center;overflow-x:auto;}
+.decomp-eq{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:20px 0;padding:20px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;}
+.decomp-term{text-align:center;flex:1;min-width:120px;}
+.decomp-term .term-val{font-family:'DM Mono',monospace;font-size:15px;color:var(--accent3);margin-bottom:4px;}
+.decomp-term .term-desc{font-size:11px;color:var(--muted);}
+.decomp-op{font-size:22px;color:var(--dim);}
+.page-nav{margin-top:64px;padding-top:32px;border-top:1px solid var(--border);display:flex;justify-content:space-between;}
+.nav-btn{display:inline-flex;align-items:center;gap:8px;color:var(--muted);text-decoration:none;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.05em;padding:10px 16px;border:1px solid var(--border2);border-radius:6px;transition:all .2s;}
+.nav-btn:hover{color:var(--accent);border-color:rgba(168,196,224,.3);background:rgba(168,196,224,.04);}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <a class="back-link" href="index.html">&#8592; Back to Portal</a>
+    <div class="sidebar-week">Week 11</div>
+    <div class="sidebar-title">MAXQ &amp; Option Discovery</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="toc-label">Contents</div>
+    <a class="toc-link" href="#maxq">1. The MAXQ Framework</a>
+    <a class="toc-link" href="#callgraph">2. Call Graphs &amp; Taxi World</a>
+    <a class="toc-link" href="#decomp">3. Value Function Decomposition</a>
+    <a class="toc-link" href="#pseudo">4. Pseudo-Rewards</a>
+    <a class="toc-link" href="#discovery">5. Option Discovery</a>
+  </nav>
+</aside>
+
+<main class="main">
+  <div class="page-eyebrow">Week 11 · Examination Notes</div>
+  <h1 class="page-title">MAXQ &amp; Option<br>Discovery</h1>
+  <p class="page-intro">MAXQ decomposes the value function itself across a hierarchy of sub-tasks. Option Discovery automates finding those sub-tasks using structural analysis of the state space.</p>
+
+  <!-- SECTION 1 -->
+  <section class="section" id="maxq">
+    <div class="section-number">Section 01</div>
+    <h2>The MAXQ Framework &amp; Sub-tasks</h2>
+    <p>Where Options and HAMs constrain the <em>policy</em>, MAXQ decomposes the <em>value function</em> itself. The core MDP is split into a hierarchy of sub-tasks $M_0, M_1, \dots, M_n$, where $M_0$ is the root (solving the entire problem).</p>
+
+    <h3>Sub-tasks as SMDPs</h3>
+    <p>Each sub-task $M_i$ can invoke both primitive actions (1 step) and other sub-tasks (variable $\tau$ steps). Because transitions occur over variable time intervals, every sub-task must be modelled as an SMDP.</p>
+
+    <div class="question">
+      <div class="question-title">Practice Assignment 11 · Q1</div>
+      <p>Each sub-task $M_i$ in MAXQ is not an SMDP. True or False?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; False</div>
+        <p>Because sub-tasks can invoke other sub-tasks (variable-duration macro-actions), transitions span varying time intervals — the defining characteristic of an SMDP. Every sub-task is an SMDP.</p>
+      </div>
+    </div>
+
+    <h3>Sub-task Termination</h3>
+    <p>MAXQ partitions all MDP states into <strong>active states</strong> and <strong>terminal states</strong> for each sub-task. Sub-task $M_i$ terminates immediately and <em>deterministically</em> when the agent enters a terminal state for $M_i$.</p>
+
+    <div class="question">
+      <div class="question-title">Assignment 11 · Q1</div>
+      <p>How does sub-task termination work in MAXQ?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (b) — Termination is deterministic</div>
+        <p>States are partitioned into active and terminal sets per sub-task. The moment the agent enters a terminal state for the current sub-task, it terminates — no probability involved.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 -->
+  <section class="section" id="callgraph">
+    <div class="section-number">Section 02</div>
+    <h2>Call Graphs &amp; Taxi World</h2>
+    <p>Sub-task dependencies are shown in a <strong>Call Graph</strong> where nodes are tasks and directed edges show which tasks can invoke which.</p>
+
+    <div class="question">
+      <div class="question-title">Practice Assignment 11 · Q2</div>
+      <p>What structural property must the MAXQ call graph satisfy?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (b) — Must be a DAG (Directed Acyclic Graph)</div>
+        <p>Cycles would cause infinite loops (A calls B, B calls A) without ever executing a primitive action. A DAG guarantees that execution always terminates at leaf nodes (primitives).</p>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-title">Assignment 11 · Q5</div>
+      <p>Is the left-to-right ordering in a MAXQ call graph important for execution order?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; False</div>
+        <p>Visual layout is purely for readability. The policy dynamically determines which sub-task to call based on the current state — not the diagram's left-to-right ordering.</p>
+      </div>
+    </div>
+
+    <h3>Taxi World Example</h3>
+    <p>A taxi navigates a 5×5 grid to pick up a passenger at one of four locations (R, G, B, Y) and deliver them to their destination.</p>
+
+    <div class="diagram-wrap">
+      <svg width="400" height="130" viewBox="0 0 400 130">
+        <defs><marker id="a11" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#5a5a60"/></marker></defs>
+        <!-- Root -->
+        <rect x="155" y="5" width="90" height="28" rx="5" fill="#10181a" stroke="#2a3840"/>
+        <text x="200" y="23" fill="#a8c4e0" font-size="10" text-anchor="middle">Root Task</text>
+        <!-- Pick up / Drop off -->
+        <rect x="50" y="55" width="90" height="28" rx="5" fill="#121812" stroke="#223022"/>
+        <text x="95" y="73" fill="#9cb87c" font-size="10" text-anchor="middle">Pick-up</text>
+        <rect x="260" y="55" width="90" height="28" rx="5" fill="#121812" stroke="#223022"/>
+        <text x="305" y="73" fill="#9cb87c" font-size="10" text-anchor="middle">Drop-off</text>
+        <!-- Navigate -->
+        <rect x="155" y="55" width="90" height="28" rx="5" fill="#1a1508" stroke="#3a2a18"/>
+        <text x="200" y="73" fill="#f2cc8f" font-size="10" text-anchor="middle">Navigate(t)</text>
+        <!-- Primitives -->
+        <rect x="20" y="105" width="60" height="20" rx="3" fill="#16161a" stroke="#2a2a38"/>
+        <text x="50" y="118" fill="#5a5a60" font-size="8" text-anchor="middle">pick-up</text>
+        <rect x="100" y="105" width="60" height="20" rx="3" fill="#16161a" stroke="#2a2a38"/>
+        <text x="130" y="118" fill="#5a5a60" font-size="8" text-anchor="middle">put-down</text>
+        <rect x="175" y="105" width="50" height="20" rx="3" fill="#16161a" stroke="#2a2a38"/>
+        <text x="200" y="118" fill="#5a5a60" font-size="8" text-anchor="middle">N/S/E/W</text>
+        <rect x="310" y="105" width="60" height="20" rx="3" fill="#16161a" stroke="#2a2a38"/>
+        <text x="340" y="118" fill="#5a5a60" font-size="8" text-anchor="middle">put-down</text>
+        <!-- Arrows -->
+        <line x1="175" y1="33" x2="115" y2="55" stroke="#3a3835" stroke-width="1.2" marker-end="url(#a11)"/>
+        <line x1="200" y1="33" x2="200" y2="55" stroke="#3a3835" stroke-width="1.2" marker-end="url(#a11)"/>
+        <line x1="225" y1="33" x2="285" y2="55" stroke="#3a3835" stroke-width="1.2" marker-end="url(#a11)"/>
+        <line x1="80" y1="83" x2="55" y2="105" stroke="#3a3835" stroke-width="1" marker-end="url(#a11)"/>
+        <line x1="100" y1="83" x2="128" y2="105" stroke="#3a3835" stroke-width="1" marker-end="url(#a11)"/>
+        <line x1="200" y1="83" x2="200" y2="105" stroke="#3a3835" stroke-width="1" marker-end="url(#a11)"/>
+        <line x1="295" y1="83" x2="338" y2="105" stroke="#3a3835" stroke-width="1" marker-end="url(#a11)"/>
+      </svg>
+    </div>
+
+    <h3>State Space Calculation</h3>
+    <p>Three variables fully define a state: taxi location, passenger location, passenger destination.</p>
+
+    <table>
+      <thead><tr><th>Variable</th><th>Values</th><th>Count</th></tr></thead>
+      <tbody>
+        <tr><td>Taxi Location</td><td>5&#215;5 grid minus 7 obstacles</td><td>18</td></tr>
+        <tr><td>Passenger Location</td><td>R, G, B, Y, or inside taxi</td><td>5</td></tr>
+        <tr><td>Passenger Destination</td><td>R, G, B, or Y</td><td>4</td></tr>
+        <tr><td colspan="2"><strong>Total</strong></td><td><strong>18 &#215; 5 &#215; 4 = 360</strong></td></tr>
+      </tbody>
+    </table>
+
+    <div class="question">
+      <div class="question-title">Assignment 11 · Q6</div>
+      <p>How many states suffice to define all information in the Taxi World?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (c) — 18 &#215; 5 &#215; 4 = 360</div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-title">Assignment 11 · Q3</div>
+      <p>From: (i) Left, (ii) Drop-off, (iii) Navigate, (iv) put-down — which are primitive actions?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (c) — (i) Left, (iv) put-down</div>
+        <p>Primitive actions are single-step, native to the environment: directional moves and pick/put. Drop-off and Navigate are abstract sub-tasks composed of sequences of primitives.</p>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-title">Assignment 11 · Q4</div>
+      <p>What is the parameter $t$ in Navigate$(t)$?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (c) — The destination (one of R, G, B, Y)</div>
+        <p>Parameterising Navigate with a destination allows the same learned navigation logic to be reused for all four possible target locations.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section class="section" id="decomp">
+    <div class="section-number">Section 03</div>
+    <h2>MAXQ Value Function Decomposition</h2>
+    <p>The key insight: the value of the root task can be computed by summing values of active sub-tasks down the hierarchy.</p>
+
+    <h3>Value Function Notation: $V^\pi(i, s)$</h3>
+    <p>In hierarchical RL, value depends not just on state but on <em>what you are currently trying to accomplish</em>. Being at position (2,2) has a different value if you are in the Pick-up sub-task versus Drop-off.</p>
+
+    <div class="question">
+      <div class="question-title">Assignment 11 · Q2</div>
+      <p>In $V^\pi(i, s)$, what is $i$?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (c) — Identity of the sub-task / SMDP being executed</div>
+        <p>$i$ tells us the hierarchical context. The same state $s$ has different values depending on which sub-task the agent is currently executing.</p>
+      </div>
+    </div>
+
+    <h3>The Decomposition Equation</h3>
+    <p>For sub-task $i$ choosing to execute action $a$:</p>
+
+    <div class="math-block">
+      <div class="math-label">MAXQ Q-Value Decomposition</div>
+      $$Q^\pi(i, s, a) = V^\pi(a, s) + C^\pi(i, s, a)$$
+    </div>
+
+    <div class="decomp-eq">
+      <div class="decomp-term">
+        <div class="term-val">Q&#x03C0;(i, s, a)</div>
+        <div class="term-desc">Total action-value of taking action $a$ in state $s$ under sub-task $i$</div>
+      </div>
+      <div class="decomp-op">=</div>
+      <div class="decomp-term">
+        <div class="term-val">V&#x03C0;(a, s)</div>
+        <div class="term-desc">Return accumulated <em>during</em> execution of action $a$</div>
+      </div>
+      <div class="decomp-op">+</div>
+      <div class="decomp-term">
+        <div class="term-val">C&#x03C0;(i, s, a)</div>
+        <div class="term-desc">Completion: return accumulated <em>after</em> $a$ finishes, to complete sub-task $i$</div>
+      </div>
+    </div>
+
+    <div class="callout">
+      &#128161; $V^\pi(a, s)$ is the value function of the <em>child</em> sub-task $a$ (what happens during $a$'s execution). $C^\pi(i, s, a)$ captures what the <em>parent</em> sub-task $i$ still needs to do after $a$ completes.
+    </div>
+
+    <div class="question">
+      <div class="question-title">Assignment 11 · Q9</div>
+      <p>Taking action $a$ gives reward $r_1$; after $a$ completes, reward $r_2$ finishes sub-task $i$. What is $C^\pi(i, s, a)$?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (a) — $C^\pi(i, s, a) = r_2$</div>
+        <p>$V^\pi(a, s)$ captures $r_1$ (during $a$). The completion function captures what remains after $a$ finishes — which is $r_2$.</p>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-title">Practice Assignment 11 · Q4</div>
+      <p>Is $\bar{R}(s,a)$ (expected reward of SMDP for $M_i$) equivalent to $V^{\pi_i}(a,s)$?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; False</div>
+        <p>The accumulated reward during $a$ evaluates to $V^\pi(a,s)$ (global hierarchical policy $\pi$), not $V^{\pi_i}(a,s)$ (isolated sub-task policy $\pi_i$). The notation matters — the global policy is applied, not the sub-task-local one.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 -->
+  <section class="section" id="pseudo">
+    <div class="section-number">Section 04</div>
+    <h2>Learning with Pseudo-Rewards</h2>
+    <p>The environment doesn't reward the agent for reaching a doorway — it only rewards the ultimate task goal. To train sub-tasks that target intermediate states (like "reach the door"), we supply artificially designed <strong>pseudo-rewards</strong>.</p>
+
+    <div class="question">
+      <div class="question-title">Practice Assignment 11 · Q3</div>
+      <p>In MAXQ, the agent is restricted to the sub-task's pseudo-rewards (core MDP rewards unavailable while learning sub-tasks). True or False?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; False</div>
+        <p>Core environment rewards are always available and accumulate normally. Pseudo-rewards are <em>additional</em> local incentives to shape sub-task behaviour — they supplement, not replace, the core reward signal.</p>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-title">Assignment 11 · Q10</div>
+      <p>If sub-task $M_i$ invokes sub-task $M_j$, do $M_j$'s pseudo-rewards affect $M_i$?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; Yes</div>
+        <p>$M_j$'s pseudo-rewards are numerically local and not directly added to $M_i$'s return. However, they shape what policy $M_j$ learns. Since $M_i$ relies on $M_j$'s behaviour to achieve its goals, $M_j$'s pseudo-rewards indirectly but fundamentally affect $M_i$'s performance.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 -->
+  <section class="section" id="discovery">
+    <div class="section-number">Section 05</div>
+    <h2>Option Discovery</h2>
+    <p>Rather than a human manually designing the sub-task hierarchy, Option Discovery algorithms find useful sub-goals <em>automatically</em> from the structure of the state space.</p>
+
+    <h3>What Makes a Good Option?</h3>
+
+    <div class="question">
+      <div class="question-title">Assignment 11 · Q8</div>
+      <p>Which can be considered a good option in HRL?<br>(a) Can be reused often. (b) Cuts down exploration. (c) Helps transfer learning.</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; All of (a), (b), (c)</div>
+        <p>(a) "Exit the room" is useful regardless of the ultimate global goal. (b) A macro-action to the doorway eliminates random wandering. (c) In a new but similar environment, the "exit room" option transfers directly without relearning from scratch.</p>
+      </div>
+    </div>
+
+    <h3>Bottleneck Detection</h3>
+    <p>The most common automatic approach: find <strong>bottleneck states</strong> — states that <em>must</em> be passed through to reach many different goals. In a state-space graph, bottlenecks are nodes connecting densely-connected regions (like doorways between rooms).</p>
+
+    <!-- Bottleneck diagram -->
+    <div class="diagram-wrap">
+      <svg width="380" height="120" viewBox="0 0 380 120">
+        <!-- Room 1 (dense cluster) -->
+        <ellipse cx="90" cy="60" rx="70" ry="45" fill="#0f1418" stroke="#1a2838"/>
+        <text x="90" y="30" fill="#5a7a9a" font-size="9" text-anchor="middle">Room 1</text>
+        <circle cx="60" cy="60" r="5" fill="#2a3840" stroke="#3a4850"/>
+        <circle cx="80" cy="45" r="5" fill="#2a3840" stroke="#3a4850"/>
+        <circle cx="100" cy="70" r="5" fill="#2a3840" stroke="#3a4850"/>
+        <circle cx="75" cy="78" r="5" fill="#2a3840" stroke="#3a4850"/>
+        <circle cx="110" cy="50" r="5" fill="#2a3840" stroke="#3a4850"/>
+        <!-- Lines within room 1 -->
+        <line x1="60" y1="60" x2="80" y2="45" stroke="#2a3840"/>
+        <line x1="80" y1="45" x2="100" y2="70" stroke="#2a3840"/>
+        <line x1="100" y1="70" x2="75" y2="78" stroke="#2a3840"/>
+        <line x1="110" y1="50" x2="80" y2="45" stroke="#2a3840"/>
+        <!-- Bottleneck -->
+        <circle cx="190" cy="60" r="10" fill="#1a2010" stroke="#a8c4e0" stroke-width="2"/>
+        <text x="190" y="64" fill="#a8c4e0" font-size="8" text-anchor="middle">B</text>
+        <text x="190" y="90" fill="#7090a8" font-size="8" text-anchor="middle">bottleneck</text>
+        <text x="190" y="102" fill="#5a5a60" font-size="7" text-anchor="middle">(doorway)</text>
+        <!-- Lines to bottleneck -->
+        <line x1="156" y1="55" x2="180" y2="58" stroke="#3a5060" stroke-width="1.5"/>
+        <line x1="156" y1="65" x2="180" y2="62" stroke="#3a5060" stroke-width="1.5"/>
+        <!-- Room 2 -->
+        <ellipse cx="290" cy="60" rx="70" ry="45" fill="#0f1418" stroke="#1a2838"/>
+        <text x="290" y="30" fill="#5a7a9a" font-size="9" text-anchor="middle">Room 2</text>
+        <circle cx="260" cy="60" r="5" fill="#2a3840" stroke="#3a4850"/>
+        <circle cx="280" cy="45" r="5" fill="#2a3840" stroke="#3a4850"/>
+        <circle cx="300" cy="70" r="5" fill="#2a3840" stroke="#3a4850"/>
+        <circle cx="275" cy="78" r="5" fill="#2a3840" stroke="#3a4850"/>
+        <circle cx="315" cy="55" r="5" fill="#2a3840" stroke="#3a4850"/>
+        <!-- Lines within room 2 -->
+        <line x1="260" y1="60" x2="280" y2="45" stroke="#2a3840"/>
+        <line x1="280" y1="45" x2="300" y2="70" stroke="#2a3840"/>
+        <line x1="300" y1="70" x2="275" y2="78" stroke="#2a3840"/>
+        <line x1="315" y1="55" x2="280" y2="45" stroke="#2a3840"/>
+        <!-- Lines from bottleneck to room 2 -->
+        <line x1="200" y1="58" x2="225" y2="55" stroke="#3a5060" stroke-width="1.5"/>
+        <line x1="200" y1="62" x2="225" y2="65" stroke="#3a5060" stroke-width="1.5"/>
+      </svg>
+    </div>
+
+    <div class="callout-green">
+      &#10003; Bottleneck states are perfect natural targets for options — the agent must pass through them regardless of its goal, so an option to <em>reach</em> the bottleneck is universally useful.
+    </div>
+
+    <div class="question">
+      <div class="question-title">Assignment 11 · Q7</div>
+      <p>Bottlenecks are useful surrogate measures for option discovery. True or False?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; True</div>
+        <p>In the state-space graph, a bottleneck connects densely-connected regions. The agent statistically must pass through it to reach many different goals, making it an ideal sub-goal for a reusable, exploration-reducing option.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="page-nav">
+    <a class="nav-btn" href="week10.html">&#8592; Week 10</a>
+    <a class="nav-btn" href="index.html">Portal &#8594;</a>
+  </div>
+</main>
+</div>
+</body>
+</html>

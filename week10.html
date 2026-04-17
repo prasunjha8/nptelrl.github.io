@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 10 — Hierarchical RL</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<script>MathJax={tex:{inlineMath:[["$","$"]],displayMath:[["$$","$$"]],processEscapes:true},options:{skipHtmlTags:["script","noscript","style","textarea","pre","code"]}};</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+<style>
+:root{--bg:#0c0c0e;--surface:#111114;--surface2:#16161a;--border:#222228;--border2:#2a2a30;--accent:#f2cc8f;--accent2:#81b29a;--accent3:#e07a5f;--text:#e8e6e0;--muted:#7a7870;--dim:#3a3835;--q-bg:#0f0f13;--q-border:#2a2a38;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.75;font-size:15px;font-weight:300;}
+.layout{display:flex;min-height:100vh;}
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;}
+.sidebar-header{padding:28px 20px 20px;border-bottom:1px solid var(--border);}
+.back-link{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.05em;transition:color .15s;margin-bottom:16px;}
+.back-link:hover{color:var(--accent);}
+.sidebar-title{font-family:'DM Serif Display',serif;font-size:17px;color:var(--text);line-height:1.3;}
+.sidebar-week{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto;}
+.toc-label{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);padding:0 8px;margin-bottom:8px;margin-top:4px;}
+.toc-link{display:block;color:#7a7870;text-decoration:none;padding:7px 10px;border-radius:5px;font-size:12.5px;transition:all .15s;border-left:2px solid transparent;}
+.toc-link:hover{color:var(--accent);border-left-color:var(--accent);background:rgba(242,204,143,.05);}
+.main{flex:1;max-width:820px;padding:56px 48px 80px;}
+.page-eyebrow{font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.15em;color:var(--accent);margin-bottom:12px;}
+.page-title{font-family:'DM Serif Display',serif;font-size:42px;line-height:1.1;letter-spacing:-.025em;color:var(--text);margin-bottom:16px;}
+.page-intro{font-size:15px;color:var(--muted);max-width:560px;line-height:1.8;margin-bottom:56px;padding-bottom:32px;border-bottom:1px solid var(--border);}
+.section{margin-bottom:64px;scroll-margin-top:32px;}
+.section-number{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;}
+h2{font-family:'DM Serif Display',serif;font-size:28px;letter-spacing:-.02em;color:var(--text);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+h3{font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;color:var(--accent);margin:28px 0 10px;text-transform:uppercase;letter-spacing:.06em;}
+p{margin:10px 0;color:#c0bdb5;}
+.math-block{background:var(--surface2);border:1px solid var(--border2);border-left:3px solid var(--accent);border-radius:6px;padding:16px 20px;margin:16px 0;overflow-x:auto;font-size:15px;}
+.math-label{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;}
+ul{list-style:none;margin:12px 0;padding:0;}
+ul li{padding:4px 0 4px 20px;position:relative;color:#c0bdb5;font-size:14.5px;}
+ul li::before{content:'\2014';position:absolute;left:0;color:var(--dim);font-family:'DM Mono',monospace;}
+.question{background:var(--q-bg);border:1px solid var(--q-border);border-radius:8px;padding:20px 22px;margin:20px 0;position:relative;}
+.question::before{content:'Q';position:absolute;top:-10px;left:16px;background:var(--accent);color:#0c0c0e;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;padding:2px 8px;border-radius:3px;letter-spacing:.05em;}
+.question-title{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px;margin-top:2px;}
+.question p{font-size:13.5px;color:#a8a6a0;margin:6px 0;}
+.answer{margin-top:14px;padding-top:12px;border-top:1px solid var(--border2);}
+.answer-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.answer p{font-size:13px;color:#9a9890;line-height:1.7;}
+.answer-value{font-family:'DM Mono',monospace;font-size:13px;color:var(--accent);font-weight:500;margin-bottom:6px;}
+table{width:100%;border-collapse:collapse;margin:20px 0;font-size:13.5px;}
+th{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:10px 14px;border-bottom:1px solid var(--border2);text-align:left;}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:#b8b6b0;vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.015);}
+.callout{background:rgba(242,204,143,.06);border:1px solid rgba(242,204,143,.15);border-radius:6px;padding:14px 18px;margin:16px 0;font-size:13.5px;color:#d4c090;}
+.callout-green{background:rgba(129,178,154,.06);border:1px solid rgba(129,178,154,.15);border-radius:6px;padding:14px 18px;margin:16px 0;font-size:13.5px;color:#a0c8b4;}
+.diagram-wrap{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:28px;margin:20px 0;display:flex;justify-content:center;overflow-x:auto;}
+.optimality-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0;}
+.opt-box{background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:16px;text-align:center;}
+.opt-label{font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;}
+.opt-desc{font-size:12px;color:var(--muted);margin-top:6px;}
+.page-nav{margin-top:64px;padding-top:32px;border-top:1px solid var(--border);display:flex;justify-content:space-between;}
+.nav-btn{display:inline-flex;align-items:center;gap:8px;color:var(--muted);text-decoration:none;font-family:'DM Mono',monospace;font-size:12px;letter-spacing:.05em;padding:10px 16px;border:1px solid var(--border2);border-radius:6px;transition:all .2s;}
+.nav-btn:hover{color:var(--accent);border-color:rgba(242,204,143,.3);background:rgba(242,204,143,.04);}
+</style>
+</head>
+<body>
+<div class="layout">
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <a class="back-link" href="index.html">&#8592; Back to Portal</a>
+    <div class="sidebar-week">Week 10</div>
+    <div class="sidebar-title">Hierarchical RL</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="toc-label">Contents</div>
+    <a class="toc-link" href="#intro">1. Introduction to HRL</a>
+    <a class="toc-link" href="#smdp">2. Semi-Markov Decision Processes</a>
+    <a class="toc-link" href="#options">3. The Options Framework</a>
+    <a class="toc-link" href="#hams">4. Hierarchies of Abstract Machines</a>
+    <a class="toc-link" href="#optimality">5. Types of Optimality</a>
+  </nav>
+</aside>
+
+<main class="main">
+  <div class="page-eyebrow">Week 10 · Examination Notes</div>
+  <h1 class="page-title">Hierarchical<br>Reinforcement Learning</h1>
+  <p class="page-intro">Scaling RL to large environments through temporal abstraction (macro-actions), state abstraction, and reusable sub-policies: SMDPs, Options framework, and HAMs.</p>
+
+  <!-- SECTION 1 -->
+  <section class="section" id="intro">
+    <div class="section-number">Section 01</div>
+    <h2>Introduction to Hierarchical RL</h2>
+    <p>Humans don't plan every footstep when navigating to a train station. We decompose: "Exit building" &#8594; "Walk to bus stop" &#8594; "Take bus." HRL replicates this by breaking the MDP into a hierarchy of sub-problems.</p>
+
+    <div class="diagram-wrap">
+      <svg width="420" height="120" viewBox="0 0 420 120">
+        <defs><marker id="a10" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><polygon points="0 0,6 3,0 6" fill="#5a5a60"/></marker></defs>
+        <!-- Root -->
+        <rect x="160" y="8" width="100" height="30" rx="5" fill="#1a1508" stroke="#4a3a18"/>
+        <text x="210" y="27" fill="#f2cc8f" font-size="10" text-anchor="middle">Root Task</text>
+        <!-- Level 2 -->
+        <rect x="60" y="62" width="100" height="28" rx="4" fill="#121812" stroke="#2a3a22"/>
+        <text x="110" y="80" fill="#81b29a" font-size="9" text-anchor="middle">Sub-task A</text>
+        <rect x="260" y="62" width="100" height="28" rx="4" fill="#121812" stroke="#2a3a22"/>
+        <text x="310" y="80" fill="#81b29a" font-size="9" text-anchor="middle">Sub-task B</text>
+        <!-- Primitives -->
+        <rect x="30" y="108" width="55" height="8" rx="2" fill="#16161a" stroke="#2a2a38"/>
+        <text x="57" y="115" fill="#5a5a60" font-size="7" text-anchor="middle">Up/Down</text>
+        <rect x="95" y="108" width="55" height="8" rx="2" fill="#16161a" stroke="#2a2a38"/>
+        <text x="122" y="115" fill="#5a5a60" font-size="7" text-anchor="middle">Left/Right</text>
+        <rect x="240" y="108" width="55" height="8" rx="2" fill="#16161a" stroke="#2a2a38"/>
+        <text x="267" y="115" fill="#5a5a60" font-size="7" text-anchor="middle">Pick/Drop</text>
+        <rect x="305" y="108" width="55" height="8" rx="2" fill="#16161a" stroke="#2a2a38"/>
+        <text x="332" y="115" fill="#5a5a60" font-size="7" text-anchor="middle">Navigate</text>
+        <!-- Arrows -->
+        <line x1="185" y1="38" x2="130" y2="62" stroke="#3a3835" stroke-width="1.2" marker-end="url(#a10)"/>
+        <line x1="235" y1="38" x2="290" y2="62" stroke="#3a3835" stroke-width="1.2" marker-end="url(#a10)"/>
+        <line x1="95" y1="90" x2="65" y2="108" stroke="#3a3835" stroke-width="1" marker-end="url(#a10)"/>
+        <line x1="115" y1="90" x2="125" y2="108" stroke="#3a3835" stroke-width="1" marker-end="url(#a10)"/>
+        <line x1="285" y1="90" x2="265" y2="108" stroke="#3a3835" stroke-width="1" marker-end="url(#a10)"/>
+        <line x1="315" y1="90" x2="330" y2="108" stroke="#3a3835" stroke-width="1" marker-end="url(#a10)"/>
+      </svg>
+    </div>
+
+    <h3>Key Advantages</h3>
+    <ul>
+      <li><strong>Temporal Abstraction:</strong> "Exit building" spans many steps but the planner treats it as one action</li>
+      <li><strong>State Abstraction:</strong> Solving "exit building" doesn't require knowing train timetables — irrelevant variables dropped</li>
+      <li><strong>Reusability / Transfer:</strong> The "exit building" policy works whether the goal is the station, cafeteria, or library</li>
+    </ul>
+
+    <div class="question">
+      <div class="question-title">Assignment 10 · Q6</div>
+      <p>Which are possible advantages of formulating a problem as a hierarchy of sub-problems?<br>
+      (a) Reduced state space. (b) Meaningful state abstraction. (c) Temporal abstraction. (d) Reusability.</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; All of (a), (b), (c), (d)</div>
+        <p>All four are genuine advantages of hierarchical decomposition.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 2 -->
+  <section class="section" id="smdp">
+    <div class="section-number">Section 02</div>
+    <h2>Semi-Markov Decision Processes (SMDPs)</h2>
+    <p>Standard MDPs assume every action takes exactly 1 step. Macro-actions take variable time $\tau$ — we need <strong>SMDPs</strong> to model this.</p>
+
+    <h3>SMDP Q-Learning Update</h3>
+    <p>The agent accumulates discounted rewards over $\tau$ steps, and the next-state value is discounted by $\gamma^\tau$:</p>
+
+    <div class="math-block">
+      <div class="math-label">SMDP Q-Learning</div>
+      $$Q(s,a) \leftarrow Q(s,a) + \alpha\!\left[\underbrace{r_t + \gamma r_{t+1} + \cdots + \gamma^{\tau-1}r_{t+\tau-1}}_{A} + \underbrace{\gamma^\tau}_{B}\!\max_{a'} Q(s', a') - Q(s,a)\right]$$
+    </div>
+
+    <div class="question">
+      <div class="question-title">Assignment 10 · Q1</div>
+      <p>In the SMDP Q-learning update $Q(s,a) = Q(s,a) + \alpha[A + B\max_{a'}Q(s',a') - Q(s,a)]$, what are $A$ and $B$?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (b) — A = sum of discounted rewards during &#964; steps; B = &#947;&#8319;</div>
+        <p>$A$ accumulates actual rewards during the macro-action's execution. $B = \gamma^\tau$ discounts the next state by the full duration of the macro-action.</p>
+      </div>
+    </div>
+
+    <h3>Bellman Equation for SMDPs</h3>
+
+    <div class="math-block">
+      <div class="math-label">Optimal SMDP Bellman Equation</div>
+      $$V^*(s) = \max_{a \in A(s)} \left[\sum_{s',\tau} P(s',\tau \mid s,a)\left(R(s,a,\tau,s') + \gamma^\tau V^*(s')\right)\right]$$
+    </div>
+
+    <div class="question">
+      <div class="question-title">Assignment 10 · Q10</div>
+      <p>Correct Bellman equation for an SMDP?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (c) — The formula above</div>
+        <p>Must sum over the joint distribution of next state $s'$ and duration $\tau$. The discount $\gamma^\tau$ reflects how many actual time steps elapsed.</p>
+      </div>
+    </div>
+
+    <h3>SMDP vs Conventional Q-Learning</h3>
+
+    <div class="question">
+      <div class="question-title">Assignment 10 · Q2</div>
+      <p>If next state and reward depend only on $(s,a)$ (not $\tau$), does conventional Q-learning yield the same policy as SMDP Q-learning?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; No</div>
+        <p>Even with state/reward independent of $\tau$, the $\gamma^\tau$ factor changes relative weighting of short vs long macro-actions, potentially altering the optimal policy.</p>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-title">Assignment 10 · Q7</div>
+      <p>If $\tau$ is fixed for all state-action pairs, do conventional and SMDP Q-learning give the same policy for $\tau=3$, $\tau=2$, $\tau=1$?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (d) — No, No, Yes</div>
+        <p>Only when $\tau=1$ does SMDP collapse to standard MDP (discount $\gamma^1 = \gamma$). For $\tau > 1$, the $\gamma^\tau$ scaling changes the reward weighting, potentially changing the optimal policy.</p>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-title">Assignment 10 · Q9</div>
+      <p>Which scenarios satisfy $P(s',\tau \mid s,a) = P(s' \mid s,a)P(\tau \mid s,a)$ (next state and transition time are independent)?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (a) Single door; (c) Primitive actions only</div>
+        <p>(a) One door: time to exit depends only on start position, not on which door you exit (only one option). (c) Primitive actions take $\tau=1$ deterministically — trivially independent. (b) Two doors: the door you exit through (next state) directly determines how long it took — dependent.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 3 -->
+  <section class="section" id="options">
+    <div class="section-number">Section 03</div>
+    <h2>The Options Framework</h2>
+    <p>An <strong>Option</strong> is a formalised macro-action. Each option has three components:</p>
+
+    <div class="diagram-wrap">
+      <svg width="440" height="90" viewBox="0 0 440 90">
+        <rect x="10" y="15" width="130" height="60" rx="6" fill="#1a1408" stroke="#3a2a18"/>
+        <text x="75" y="38" fill="#f2cc8f" font-size="10" text-anchor="middle">Initiation Set I</text>
+        <text x="75" y="54" fill="#7a6a50" font-size="9" text-anchor="middle">States where option</text>
+        <text x="75" y="66" fill="#7a6a50" font-size="9" text-anchor="middle">can be started</text>
+        <rect x="160" y="15" width="120" height="60" rx="6" fill="#121812" stroke="#223022"/>
+        <text x="220" y="38" fill="#81b29a" font-size="10" text-anchor="middle">Policy &#960;</text>
+        <text x="220" y="54" fill="#508050" font-size="9" text-anchor="middle">Internal policy</text>
+        <text x="220" y="66" fill="#508050" font-size="9" text-anchor="middle">once activated</text>
+        <rect x="300" y="15" width="130" height="60" rx="6" fill="#10181a" stroke="#1a3038"/>
+        <text x="365" y="38" fill="#7c9cbf" font-size="10" text-anchor="middle">Termination &#946;</text>
+        <text x="365" y="54" fill="#406070" font-size="9" text-anchor="middle">Prob. of stopping</text>
+        <text x="365" y="66" fill="#406070" font-size="9" text-anchor="middle">in each state</text>
+      </svg>
+    </div>
+
+    <div class="question">
+      <div class="question-title">Assignment 10 · Q8</div>
+      <p>In the classical options framework, every option has a non-zero probability of terminating in any state. True or False?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; False</div>
+        <p>$\beta(s) = 0$ is perfectly valid for many states. An option navigating to a door has 0% chance of terminating voluntarily in the middle of a hallway.</p>
+      </div>
+    </div>
+
+    <h3>Markov vs Semi-Markov Options</h3>
+
+    <table>
+      <thead><tr><th>Type</th><th>Policy depends on</th></tr></thead>
+      <tbody>
+        <tr><td>Markov Option</td><td>Current state only</td></tr>
+        <tr><td>Semi-Markov Option</td><td>Full history since option initiation (can generalise to current state as special case)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="question">
+      <div class="question-title">Assignment 10 · Q4</div>
+      <p>Which are true about Markov and Semi-Markov options?<br>(a) Markov policy depends on current state only.<br>(b) Semi-Markov can also depend on current state only.<br>(c) Semi-Markov generally may depend on full history since initiation.</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (a), (b), (c)</div>
+        <p>A Markov option is a special case of a Semi-Markov option. Semi-Markov options subsume Markov ones — they can use history but don't have to.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 4 -->
+  <section class="section" id="hams">
+    <div class="section-number">Section 04</div>
+    <h2>Hierarchies of Abstract Machines (HAMs)</h2>
+    <p>HAMs constrain the agent to execute programs defined by finite state machines. Four types of machine states:</p>
+
+    <table>
+      <thead><tr><th>State Type</th><th>What it does</th><th>RL agent decides here?</th></tr></thead>
+      <tbody>
+        <tr><td>Action State</td><td>Emits a primitive action to the environment</td><td>No — hardcoded</td></tr>
+        <tr><td>Call State</td><td>Suspends current machine, calls a sub-machine</td><td>No</td></tr>
+        <tr><td>Choice State</td><td>Fork — agent chooses which machine state to go to next</td><td><strong>Yes</strong></td></tr>
+        <tr><td>Stop State</td><td>Terminates current machine, returns to caller</td><td>No</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      &#128161; The RL agent only acts at <strong>Choice States</strong>. All other transitions are deterministic machine logic.
+    </div>
+
+    <div class="question">
+      <div class="question-title">Practice Assignment 10 · Q3</div>
+      <p>Which are true for HAMs?<br>(a) Machines are connected as a DAG.<br>(d) Action states are the only ones that interact with the environment.</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (a), (d)</div>
+        <p>(a) Must be a DAG to prevent infinite recursive loops. (d) Only action states emit primitive actions — other states transition within or between machines. Choice states select within the same machine; stop states return to the parent machine.</p>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-title">Assignment 10 · Q5</div>
+      <p>Statement 1: SMDP state = base MDP state + call stack + current machine state.<br>Statement 2: SMDP actions are defined by action states.</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (b) — Statement 1 True, Statement 2 False</div>
+        <p>The full SMDP state includes where we are in the machine stack (S1 true). But RL decisions are made at <em>choice states</em>, not action states — action states are hardcoded (S2 false).</p>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-title">Practice Assignment 10 · Q4</div>
+      <p>In a HAM, the core MDP state changes only when we visit a choice state. True or False?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; False</div>
+        <p>The environment state changes only when a <em>primitive action</em> is executed — which happens exclusively at action states, not choice states.</p>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-title">Assignment 10 · Q3</div>
+      <p>What is the immediate reward received between two choice states in a HAM?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (a) — Accumulated sum of all core MDP rewards between the two choice points</div>
+        <p>The agent decides at choice state A; the machine runs through action states until the next choice state B. The reward for A's decision is the total sum of all primitive rewards during that execution.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SECTION 5 -->
+  <section class="section" id="optimality">
+    <div class="section-number">Section 05</div>
+    <h2>Types of Optimality in HRL</h2>
+    <p>Hierarchical constraints restrict the policy space, leading to three different notions of optimality:</p>
+
+    <div class="optimality-row">
+      <div class="opt-box">
+        <div class="opt-label" style="color:var(--accent)">Flat Optimal (F)</div>
+        <div style="font-size:13px;color:#c0bdb5;margin:8px 0;">Ignores hierarchy entirely. Best possible policy in the base MDP.</div>
+        <div class="opt-desc">Highest return. Hardest to learn.</div>
+      </div>
+      <div class="opt-box">
+        <div class="opt-label" style="color:var(--accent2)">Hierarchically Optimal (H)</div>
+        <div style="font-size:13px;color:#c0bdb5;margin:8px 0;">Best policy within hierarchical graph constraints.</div>
+        <div class="opt-desc">Return &#8804; Flat. Easier to learn.</div>
+      </div>
+      <div class="opt-box">
+        <div class="opt-label" style="color:var(--accent3)">Recursively Optimal (R)</div>
+        <div style="font-size:13px;color:#c0bdb5;margin:8px 0;">Every sub-task is locally optimal, regardless of global effect.</div>
+        <div class="opt-desc">Lowest return. Easiest to learn.</div>
+      </div>
+    </div>
+
+    <div class="math-block">
+      <div class="math-label">Ordering of Expected Returns</div>
+      $$R \;\leq\; H \;\leq\; F$$
+    </div>
+
+    <div class="question">
+      <div class="question-title">Practice Assignment 10 · Q1</div>
+      <p>Expected ordering of total reward for hierarchically optimal (H), recursively optimal (R), and flat optimal (F)?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; (c) — R &#8804; H &#8804; F</div>
+        <p>Flat has full policy freedom — maximum return. Hierarchical is constrained by the graph. Recursive is additionally constrained by forced local sub-task optimality — most restrictive, lowest potential return.</p>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-title">Practice Assignment 10 · Q2</div>
+      <p>Do flat optimal solutions give the highest expected return?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; Yes</div>
+        <p>Flat optimality is unconstrained — it searches the full policy space and always finds the global maximum.</p>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-title">Practice Assignment 10 · Q5</div>
+      <p>Flat optimal policies are always easier to learn than recursively optimal policies. True or False?</p>
+      <div class="answer">
+        <div class="answer-label">Solution</div>
+        <div class="answer-value">&#10003; False</div>
+        <p>Flat policies yield better returns but are significantly harder to learn — they face the full curse of dimensionality. Recursive policies work in heavily reduced sub-task state spaces and benefit from reuse, making them much easier to learn despite lower potential returns.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="page-nav">
+    <a class="nav-btn" href="week9.html">&#8592; Week 9</a>
+    <a class="nav-btn" href="week11.html">Week 11 &#8594;</a>
+  </div>
+</main>
+</div>
+</body>
+</html>
